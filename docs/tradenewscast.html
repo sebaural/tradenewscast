@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TradeNewsCast — Live Market Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --bg2: #111418;
+    --bg3: #181c22;
+    --border: #1e2530;
+    --border2: #2a3340;
+    --accent: #f0a500;
+    --accent2: #e8890a;
+    --red: #e05252;
+    --green: #3ecf6e;
+    --blue: #4a9eff;
+    --muted: #5a6578;
+    --text: #c8d4e0;
+    --text2: #8a9ab0;
+    --text3: #4a5568;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+    --ticker-speed: 60s;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.5;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── TICKER TAPE ── */
+  .ticker-wrap {
+    background: var(--accent);
+    height: 28px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--accent2);
+  }
+  .ticker-label {
+    background: #000;
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 0 12px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    letter-spacing: 1.5px;
+    flex-shrink: 0;
+  }
+  .ticker-track {
+    display: flex;
+    width: max-content;
+    animation: ticker var(--ticker-speed) linear infinite;
+  }
+  .ticker-item {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: #000;
+    padding: 0 28px;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+  }
+  .ticker-item .up { color: #1a5c2a; }
+  .ticker-item .dn { color: #6b0000; }
+  @keyframes ticker {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .logo {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    color: #fff;
+  }
+  .logo span { color: var(--accent); }
+  .header-meta {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    color: var(--green);
+    text-transform: uppercase;
+  }
+  .live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+  }
+  .clock {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text2);
+    letter-spacing: 0.5px;
+  }
+
+  /* ── VOICE CONTROLS ── */
+  .voice-bar {
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .voice-bar-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+  .btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    padding: 5px 14px;
+    border-radius: 3px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--bg); border-color: var(--accent); color: var(--accent); }
+  .btn.active { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 600; }
+  .btn.danger { border-color: var(--red); color: var(--red); }
+  .btn.danger:hover { background: var(--red); color: #fff; }
+
+  .speed-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+  }
+  .speed-group label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+  select.speed-sel {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border2);
+    border-radius: 3px;
+    padding: 4px 8px;
+    cursor: pointer;
+    outline: none;
+  }
+
+  /* speaking indicator */
+  .speaking-wave {
+    display: none;
+    align-items: center;
+    gap: 3px;
+    height: 18px;
+  }
+  .speaking-wave.active { display: flex; }
+  .wave-bar {
+    width: 3px;
+    border-radius: 2px;
+    background: var(--accent);
+    animation: wave 0.8s ease-in-out infinite;
+  }
+  .wave-bar:nth-child(1) { height: 8px; animation-delay: 0s; }
+  .wave-bar:nth-child(2) { height: 14px; animation-delay: 0.1s; }
+  .wave-bar:nth-child(3) { height: 18px; animation-delay: 0.2s; }
+  .wave-bar:nth-child(4) { height: 12px; animation-delay: 0.15s; }
+  .wave-bar:nth-child(5) { height: 6px; animation-delay: 0.05s; }
+  @keyframes wave {
+    0%, 100% { transform: scaleY(0.5); }
+    50% { transform: scaleY(1); }
+  }
+  .speaking-text {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+    max-width: 260px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── LAYOUT ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    height: calc(100vh - 28px - 52px - 44px);
+    overflow: hidden;
+  }
+
+  /* ── MAIN FEED ── */
+  .feed-panel {
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .feed-header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .feed-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .filter-group {
+    display: flex;
+    gap: 6px;
+  }
+  .filter-btn {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 2px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.5px;
+  }
+  .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .filter-btn.on { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 600; }
+
+  .feed-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+  }
+  .feed-scroll::-webkit-scrollbar { width: 4px; }
+  .feed-scroll::-webkit-scrollbar-track { background: transparent; }
+  .feed-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* ── NEWS ITEM ── */
+  .news-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.1s;
+    display: grid;
+    grid-template-columns: 64px 1fr auto;
+    gap: 10px;
+    align-items: start;
+    animation: slideIn 0.3s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-4px); background: rgba(240,165,0,0.06); }
+    to   { opacity: 1; transform: translateY(0); background: transparent; }
+  }
+  .news-item:hover { background: var(--bg3); }
+  .news-item.active { background: rgba(240,165,0,0.07); border-left: 2px solid var(--accent); padding-left: 14px; }
+  .news-item.speaking { background: rgba(240,165,0,0.12); }
+
+  .news-time {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    padding-top: 1px;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .news-body { min-width: 0; }
+  .news-headline {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text);
+    line-height: 1.45;
+    margin-bottom: 4px;
+  }
+  .news-item.high .news-headline { color: #fff; font-weight: 500; }
+  .news-source {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.5px;
+  }
+  .news-tags {
+    display: flex;
+    gap: 4px;
+    margin-top: 5px;
+    flex-wrap: wrap;
+  }
+  .tag {
+    font-family: var(--mono);
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 2px;
+    letter-spacing: 0.8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .tag.oil     { background: rgba(240,165,0,0.12); color: var(--accent); border: 1px solid rgba(240,165,0,0.2); }
+  .tag.iran    { background: rgba(224,82,82,0.1); color: var(--red); border: 1px solid rgba(224,82,82,0.2); }
+  .tag.fed     { background: rgba(74,158,255,0.1); color: var(--blue); border: 1px solid rgba(74,158,255,0.2); }
+  .tag.macro   { background: rgba(62,207,110,0.1); color: var(--green); border: 1px solid rgba(62,207,110,0.2); }
+  .tag.markets { background: rgba(138,154,176,0.1); color: var(--text2); border: 1px solid rgba(138,154,176,0.2); }
+  .tag.geo     { background: rgba(224,82,82,0.1); color: #ff7a7a; border: 1px solid rgba(224,82,82,0.15); }
+  .tag.hot { background: var(--red); color: #fff; border-color: var(--red); }
+
+  .speak-btn {
+    background: transparent;
+    border: 1px solid var(--border2);
+    border-radius: 3px;
+    width: 26px;
+    height: 26px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text3);
+    font-size: 12px;
+    flex-shrink: 0;
+    transition: all 0.15s;
+    margin-top: 1px;
+  }
+  .speak-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .speak-btn.active-speak { border-color: var(--accent); background: rgba(240,165,0,0.15); color: var(--accent); }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg2);
+  }
+
+  .sidebar-section {
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-head {
+    padding: 8px 14px;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* market data */
+  .mkt-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .mkt-cell {
+    padding: 10px 14px;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .mkt-cell:nth-child(2n) { border-right: none; }
+  .mkt-name {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+  .mkt-price {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: -0.3px;
+  }
+  .mkt-chg {
+    font-family: var(--mono);
+    font-size: 10px;
+    margin-top: 2px;
+    letter-spacing: 0.3px;
+  }
+  .up { color: var(--green); }
+  .dn { color: var(--red); }
+  .flat { color: var(--muted); }
+
+  /* queue */
+  .queue-scroll {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 200px;
+  }
+  .queue-scroll::-webkit-scrollbar { width: 3px; }
+  .queue-scroll::-webkit-scrollbar-thumb { background: var(--border2); }
+  .queue-item {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    cursor: pointer;
+  }
+  .queue-item:hover { background: var(--bg3); }
+  .queue-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    width: 16px;
+    flex-shrink: 0;
+    padding-top: 1px;
+  }
+  .queue-text {
+    font-size: 11px;
+    color: var(--text2);
+    line-height: 1.4;
+    flex: 1;
+  }
+  .queue-item.now .queue-num { color: var(--accent); }
+  .queue-item.now .queue-text { color: var(--text); }
+
+  /* stats */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .stat-cell {
+    background: var(--bg2);
+    padding: 10px 14px;
+  }
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text3);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+  .stat-val {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  /* category breakdown */
+  .cat-list { padding: 10px 14px; }
+  .cat-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .cat-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text2);
+    width: 70px;
+    flex-shrink: 0;
+    letter-spacing: 0.3px;
+  }
+  .cat-bar-wrap {
+    flex: 1;
+    height: 5px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .cat-bar {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+  }
+  .cat-count {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    width: 22px;
+    text-align: right;
+  }
+
+  /* TTS settings panel */
+  .tts-panel {
+    padding: 10px 14px;
+  }
+  .tts-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    gap: 8px;
+  }
+  .tts-key {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text2);
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  .tts-val {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.3px;
+  }
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 90px;
+    height: 3px;
+    background: var(--border2);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+  }
+
+  /* date divider */
+  .date-div {
+    padding: 6px 16px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--text3);
+    background: var(--bg);
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  /* empty state */
+  .empty {
+    padding: 40px 20px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.5px;
+  }
+
+  /* notification */
+  .notif {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--bg3);
+    border: 1px solid var(--accent);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    padding: 10px 14px;
+    max-width: 320px;
+    font-size: 12px;
+    color: var(--text);
+    z-index: 100;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+  }
+  .notif.show { transform: translateY(0); opacity: 1; }
+  .notif-head {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--accent);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TICKER TAPE -->
+<div class="ticker-wrap">
+  <div class="ticker-label">LIVE</div>
+  <div style="overflow:hidden;flex:1;">
+    <div class="ticker-track" id="tickerTrack">
+      <span class="ticker-item">BRENT <span class="dn">$95.20</span> ▼0.75%</span>
+      <span class="ticker-item">WTI <span class="dn">$96.57</span> ▼1.33%</span>
+      <span class="ticker-item">S&amp;P 500 <span class="dn">6,816.84</span> ▼0.11%</span>
+      <span class="ticker-item">NASDAQ <span class="up">22,898</span> ▲0.34%</span>
+      <span class="ticker-item">DOW <span class="dn">47,905</span> ▼0.58%</span>
+      <span class="ticker-item">US CPI YoY <span class="dn">3.3%</span> ▲PREV 2.4%</span>
+      <span class="ticker-item">GOLD <span class="up">$3,126</span> ▲0.4%</span>
+      <span class="ticker-item">EUR/USD <span class="flat">1.0892</span> ▼0.1%</span>
+      <span class="ticker-item">USD/JPY <span class="up">158.40</span> ▲0.2%</span>
+      <span class="ticker-item">HORMUZ VESSELS/DAY <span class="dn">9</span> vs NORM ~100</span>
+      <span class="ticker-item">FED RATE <span class="flat">4.25–4.50%</span> HOLD</span>
+      <span class="ticker-item">BRENT <span class="dn">$95.20</span> ▼0.75%</span>
+      <span class="ticker-item">WTI <span class="dn">$96.57</span> ▼1.33%</span>
+      <span class="ticker-item">S&amp;P 500 <span class="dn">6,816.84</span> ▼0.11%</span>
+      <span class="ticker-item">NASDAQ <span class="up">22,898</span> ▲0.34%</span>
+      <span class="ticker-item">DOW <span class="dn">47,905</span> ▼0.58%</span>
+      <span class="ticker-item">US CPI YoY <span class="dn">3.3%</span> ▲PREV 2.4%</span>
+      <span class="ticker-item">GOLD <span class="up">$3,126</span> ▲0.4%</span>
+      <span class="ticker-item">EUR/USD <span class="flat">1.0892</span> ▼0.1%</span>
+      <span class="ticker-item">USD/JPY <span class="up">158.40</span> ▲0.2%</span>
+      <span class="ticker-item">HORMUZ VESSELS/DAY <span class="dn">9</span> vs NORM ~100</span>
+      <span class="ticker-item">FED RATE <span class="flat">4.25–4.50%</span> HOLD</span>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">Trade<span>News</span>Cast</div>
+  <div class="header-meta">
+    <div class="live-badge"><div class="live-dot"></div>LIVE FEED</div>
+    <div class="clock" id="clock">--:--:--</div>
+  </div>
+</header>
+
+<!-- VOICE BAR -->
+<div class="voice-bar">
+  <div class="voice-bar-label">AUDIO</div>
+  <button class="btn" id="btnAutoRead" onclick="toggleAutoRead()">▶ AUTO READ</button>
+  <button class="btn" id="btnPause" onclick="pauseResume()" style="display:none">⏸ PAUSE</button>
+  <button class="btn danger" id="btnStop" onclick="stopSpeech()" style="display:none">■ STOP</button>
+  <button class="btn" onclick="readNext()">⏭ NEXT</button>
+  <div class="speaking-wave" id="speakWave">
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+  </div>
+  <div class="speaking-text" id="speakText"></div>
+  <div class="speed-group">
+    <label>VOICE</label>
+    <select class="speed-sel" id="voiceSel" onchange="updateVoice()">
+      <option value="">Loading...</option>
+    </select>
+    <label>SPEED</label>
+    <select class="speed-sel" id="rateSel" onchange="updateRate()">
+      <option value="0.85">0.85×</option>
+      <option value="0.95" selected>0.95×</option>
+      <option value="1.0">1.0×</option>
+      <option value="1.1">1.1×</option>
+      <option value="1.25">1.25×</option>
+    </select>
+  </div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="layout">
+
+  <!-- FEED -->
+  <div class="feed-panel">
+    <div class="feed-header">
+      <span class="feed-title">LIVE INTELLIGENCE FEED</span>
+      <div class="filter-group">
+        <button class="filter-btn on" onclick="filterFeed('all',this)">ALL</button>
+        <button class="filter-btn" onclick="filterFeed('oil',this)">OIL</button>
+        <button class="filter-btn" onclick="filterFeed('iran',this)">IRAN</button>
+        <button class="filter-btn" onclick="filterFeed('fed',this)">FED</button>
+        <button class="filter-btn" onclick="filterFeed('macro',this)">MACRO</button>
+      </div>
+    </div>
+    <div class="feed-scroll" id="feedScroll">
+      <div class="date-div">Friday — 10 April 2026</div>
+      <div id="feedList"></div>
+      <div class="date-div" style="margin-top:4px">Thursday — 09 April 2026</div>
+      <div id="feedList2"></div>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <!-- Market Data -->
+    <div class="sidebar-section">
+      <div class="sidebar-head">MARKETS</div>
+      <div class="mkt-grid">
+        <div class="mkt-cell">
+          <div class="mkt-name">BRENT</div>
+          <div class="mkt-price">$95.20</div>
+          <div class="mkt-chg dn">▼ $0.72 (0.75%)</div>
+        </div>
+        <div class="mkt-cell">
+          <div class="mkt-name">WTI</div>
+          <div class="mkt-price">$96.57</div>
+          <div class="mkt-chg dn">▼ $1.30 (1.33%)</div>
+        </div>
+        <div class="mkt-cell">
+          <div class="mkt-name">S&amp;P 500</div>
+          <div class="mkt-price">6,816</div>
+          <div class="mkt-chg dn">▼ 7.82 (0.11%)</div>
+        </div>
+        <div class="mkt-cell">
+          <div class="mkt-name">NASDAQ</div>
+          <div class="mkt-price">22,898</div>
+          <div class="mkt-chg up">▲ 76.37 (0.34%)</div>
+        </div>
+        <div class="mkt-cell">
+          <div class="mkt-name">US CPI YoY</div>
+          <div class="mkt-price">3.3%</div>
+          <div class="mkt-chg dn">▲ PREV 2.4%</div>
+        </div>
+        <div class="mkt-cell">
+          <div class="mkt-name">CORE CPI</div>
+          <div class="mkt-price">2.6%</div>
+          <div class="mkt-chg flat">— EST 2.7%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="sidebar-section">
+      <div class="sidebar-head">SESSION STATS</div>
+      <div class="stats-grid">
+        <div class="stat-cell">
+          <div class="stat-label">HEADLINES</div>
+          <div class="stat-val" id="statTotal">0</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">READ</div>
+          <div class="stat-val" id="statRead">0</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">HIGH-IMPACT</div>
+          <div class="stat-val" id="statHigh">0</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">IN QUEUE</div>
+          <div class="stat-val" id="statQueue">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category breakdown -->
+    <div class="sidebar-section">
+      <div class="sidebar-head">CATEGORIES</div>
+      <div class="cat-list" id="catList"></div>
+    </div>
+
+    <!-- Queue -->
+    <div class="sidebar-section" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+      <div class="sidebar-head">READ QUEUE</div>
+      <div class="queue-scroll" id="queueList">
+        <div class="empty">Queue empty — enable Auto Read</div>
+      </div>
+    </div>
+
+    <!-- TTS Settings -->
+    <div class="sidebar-section">
+      <div class="sidebar-head">TTS SETTINGS</div>
+      <div class="tts-panel">
+        <div class="tts-row">
+          <span class="tts-key">PITCH</span>
+          <input type="range" id="pitchRange" min="0.8" max="1.2" step="0.05" value="1.0" oninput="document.getElementById('pitchVal').textContent=this.value">
+          <span class="tts-val" id="pitchVal">1.0</span>
+        </div>
+        <div class="tts-row">
+          <span class="tts-key">VOLUME</span>
+          <input type="range" id="volRange" min="0.5" max="1" step="0.05" value="0.95" oninput="document.getElementById('volVal').textContent=this.value">
+          <span class="tts-val" id="volVal">0.95</span>
+        </div>
+        <div class="tts-row">
+          <span class="tts-key">PAUSE BETWEEN</span>
+          <input type="range" id="pauseRange" min="0.5" max="4" step="0.5" value="1.5" oninput="document.getElementById('pauseVal').textContent=this.value+'s'">
+          <span class="tts-val" id="pauseVal">1.5s</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- NOTIFICATION -->
+<div class="notif" id="notif">
+  <div class="notif-head" id="notifHead">ALERT</div>
+  <div id="notifText"></div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// NEWS DATA
+// ══════════════════════════════════════════════
+const newsData = [
+  { time:'09:08', headline:'Lebanon, Israel agree to hold first meeting Tuesday at US State Dept to discuss announcing ceasefire and setting date to begin talks', tags:['geo','iran'], high:true, src:'LiveSquawk' },
+  { time:'09:07', headline:'Lebanon and Israel held first call via ambassadors in Washington — Lebanese Presidency. US to mediate between Lebanon and Israel', tags:['geo'], high:true, src:'LiveSquawk' },
+  { time:'09:06', headline:"United Kingdom 'AA/A-1+' ratings affirmed; Outlook Stable", tags:['macro'], high:false, src:'S&P' },
+  { time:'09:04', headline:'Aon declares quarterly cash dividend of $0.820/share payable May 15 2026, prev $0.745', tags:['markets'], high:false, src:'Corp' },
+  { time:'09:02', headline:'Weekly closes: S&P 500 +3.6%, Dow +3.0%, Nasdaq +4.7%', tags:['markets'], high:true, src:'LiveSquawk' },
+  { time:'09:01', headline:'US equity unofficial closes — S&P 500 -0.11% at 6,816 | Nasdaq +0.34% at 22,898 | Dow -0.58% at 47,905', tags:['markets'], high:true, src:'LiveSquawk' },
+  { time:'08:49', headline:'More US forces deploy to Middle East', tags:['geo','iran'], high:true, src:'WSJ' },
+  { time:'08:47', headline:'Iranian delegation includes Foreign Minister, Defence Council Secretary, Central Bank Governor and several parliament members — Iranian media', tags:['iran'], high:true, src:'IranMedia' },
+  { time:'08:45', headline:'Iran says US talks to begin only if preconditions are accepted — Reuters citing Iranian media', tags:['iran'], high:true, src:'RTRS' },
+  { time:'08:43', headline:"FDA calls Pfizer's Facebook ads for Adcetris 'false or misleading'", tags:['markets'], high:false, src:'FDA' },
+  { time:'08:42', headline:'Iranian officials land at Nur Khan Airbase in Islamabad under Pakistan Air Force escort ahead of peace talks', tags:['iran','geo'], high:true, src:'RTRS' },
+  { time:'08:35', headline:'Rio Tinto said to draw interest for US critical minerals assets', tags:['markets'], high:false, src:'Sources' },
+  { time:'08:21', headline:'Trump promises mass pardons to White House staff before leaving office', tags:['geo'], high:false, src:'WSJ' },
+  { time:'08:20', headline:'White House NEC Hassett: Starting to see more ships come through Straits; GDP effect is muted from disruption; hope temporary spike in energy is not feeding through', tags:['oil','iran'], high:true, src:'Fox' },
+  { time:'08:07', headline:'US DoE: to loan 8.5M barrels of crude from SPR to 4 companies including Macquarie and Phillips 66', tags:['oil'], high:true, src:'RTRS' },
+  { time:'08:04', headline:'World Bank President Banga: global growth rate seen dropping 0.2–0.3ppts even if ceasefire holds; inflation seen rising up to 300bps as result of war, could be much higher if conflict continues', tags:['macro','oil'], high:true, src:'WorldBank' },
+  { time:'08:00', headline:'US urges Beijing to cease military, diplomatic and economic pressure against Taiwan — State Department', tags:['geo'], high:true, src:'StateDept' },
+  { time:'07:47', headline:'Brent crude futures settle at $95.20/bbl, down $0.72 or 0.75%', tags:['oil'], high:true, src:'CME' },
+  { time:'07:31', headline:'US crude oil futures settle at $96.57/bbl, down $1.30 or 1.33%', tags:['oil'], high:true, src:'CME' },
+  { time:'07:29', headline:'Iran parliament security commission: Strait of Hormuz has not been opened in past two days following ceasefire violation; even non-hostile ships unable to pass even by paying tolls', tags:['oil','iran'], high:true, src:'IranMedia' },
+  { time:'07:25', headline:'Senators push CFTC to probe oil trading before Trump Iran news', tags:['oil','geo'], high:true, src:'BBG' },
+  { time:'07:22', headline:"Iran President Pezeshkian: Iran's responsible approach to the ceasefire lays foundation for regional stability", tags:['iran'], high:false, src:'PressTV' },
+  { time:'07:15', headline:'Reports US authorized release of $6 billion in frozen Iranian funds; Qatari and South Korean representatives arranging transfer within days', tags:['iran'], high:true, src:'X' },
+  { time:'07:02', headline:'White House official: Trump now believes opening Strait of Hormuz is unlikely anytime soon — Reuters', tags:['oil','iran'], high:true, src:'RTRS' },
+  { time:'07:01', headline:'US Federal Budget Balance March: -$164.0B vs prev -$308.0B', tags:['macro'], high:false, src:'Treasury' },
+  { time:'06:46', headline:"Pakistan PM Sharif: US-Iran talks are a 'make or break' moment to seek permanent ceasefire; leadership of both countries will start talks tomorrow in Islamabad", tags:['iran','geo'], high:true, src:'Pakistan' },
+  { time:'06:36', headline:'UK to host officials for Strait of Hormuz talks next week at more junior level than first round on April 2 — Politico', tags:['oil','geo'], high:false, src:'Politico' },
+  { time:'06:14', headline:"Israel's Channel 11: Netanyahu changed policy on attacking Lebanon following Trump call; any attack on Beirut now requires Netanyahu's special approval; intensity of attacks sharply reduced", tags:['geo','iran'], high:true, src:'Channel11' },
+  { time:'06:09', headline:"Trump's AI chip export push stymied by bureaucratic bottleneck; staffing attrition at key agency fuelling chip license backlog", tags:['markets'], high:false, src:'BBG' },
+  { time:'06:01', headline:'Baker Hughes US rig count April 10: 545 vs prev 548 | Gas rigs: 127 | Oil rigs: 411', tags:['oil'], high:false, src:'BakerHughes' },
+  { time:'05:48', headline:'NY Fed GDP Nowcast Q1: 2.31% vs prev 2.41%; Q2: 2.60% vs prev 2.82%', tags:['fed','macro'], high:true, src:'NYFed' },
+  { time:'05:45', headline:'Valero pulls back on Mexican oil after Texas refinery blast', tags:['oil'], high:true, src:'BBG' },
+  { time:'05:42', headline:'China moves to ban sulfuric acid exports as Iran war hits supply', tags:['oil','geo'], high:true, src:'BBG' },
+  { time:'05:29', headline:"Trump on Truth Social: The Iranians don't seem to realize they have no cards other than short-term extortion of the world via international waterways. The only reason they are alive today is to negotiate", tags:['iran','geo'], high:true, src:'TruthSocial' },
+  { time:'04:33', headline:'White House official: Trump is optimistic an Iran deal can be reached', tags:['iran'], high:true, src:'FoxNews' },
+  { time:'04:31', headline:"Trump tells NY Post he's preparing military if Iran fails to comply in talks: 'We're loading up the ships'", tags:['iran','geo'], high:true, src:'NYPost' },
+  { time:'04:18', headline:'Bank of America: Why we still expect 2 Fed cuts this year', tags:['fed'], high:false, src:'BofA' },
+  { time:'04:06', headline:'Iran Foreign Minister Araqchi: US must adhere to commitments to include Lebanon in ceasefire, halt Israeli attacks on Lebanon — state media', tags:['iran','geo'], high:true, src:'IranMedia' },
+  { time:'03:52', headline:'Kuwaiti Army: Iranian attack targeted National Guard facilities; injuries caused to number of personnel', tags:['iran','geo'], high:true, src:'Kuwait' },
+  { time:'03:44', headline:"Spain PM Sanchez: Ready to advance towards a joint European Army 'even tomorrow if needed'", tags:['geo'], high:false, src:'Spain' },
+  { time:'03:27', headline:'Asian nations push US to extend sanctions waiver on Russian oil', tags:['oil','geo'], high:true, src:'BBG' },
+  { time:'03:22', headline:'Switzerland aims to finalize US tariff accord by end of July', tags:['macro'], high:false, src:'BBG' },
+  { time:'03:10', headline:'US likely to approve waiver extension allowing sales of some Russian crude oil as early as Friday — Reuters sources', tags:['oil'], high:true, src:'RTRS' },
+  { time:'03:00', headline:'US Univ. of Michigan Sentiment April preliminary: 47.6 vs est 51.5, prev 53.3 | 1-year inflation expectation: 4.8% vs est 4.2%', tags:['fed','macro'], high:true, src:'UMich' },
+  { time:'02:56', headline:'Ukrainian military claims it struck Russian drilling platforms in Caspian Sea', tags:['oil','geo'], high:true, src:'Ukraine' },
+  { time:'02:23', headline:'White House NEC Hassett: Hormuz can be opened within 2 months; currently 10% of normal vessel traffic; backup plans in place', tags:['oil','iran'], high:true, src:'FoxBiz' },
+  { time:'02:02', headline:'Lockheed Martin gets $4.7 billion contract for missile production', tags:['geo','markets'], high:true, src:'DoD' },
+  { time:'01:47', headline:'Gasoline prices rise in US CPI most on record since 1967', tags:['oil','macro'], high:true, src:'BLS' },
+  { time:'01:37', headline:'US Vice President Vance: Looking forward to Iran negotiations; believes talks will be positive; Trump gave clear guidelines on negotiations', tags:['iran'], high:true, src:'VP' },
+  { time:'01:37', headline:'US CPI Supercore March month-over-month: 0.18%, year-over-year: 3.14%', tags:['fed','macro'], high:true, src:'BLS' },
+  { time:'01:33', headline:'Canada Net Change in Employment March: +14.1K vs est +15.0K; Unemployment rate: 6.7%; Hourly wages permanent employees year-over-year: +5.1%', tags:['macro'], high:false, src:'StatCan' },
+  { time:'01:31', headline:'US CPI March — month-over-month: +0.9%, year-over-year: +3.3% vs est 3.4%, prev 2.4%; Core CPI month-over-month: +0.2%, year-over-year: +2.6%', tags:['fed','macro'], high:true, src:'BLS' },
+  { time:'01:20', headline:'Iranian delegation confirms arrival in Islamabad for negotiations; main US-Iran talks to begin tomorrow; focus on opening Strait of Hormuz and extending ceasefire', tags:['iran','oil'], high:true, src:'ArabMedia' },
+  { time:'01:06', headline:"Fed Daly: if Iran conflict resolves quickly and oil prices come back down, a rate cut is 'not out of the question'; if inflation stays elevated for longer, would hold steady; policy in a good place to wait and see", tags:['fed'], high:true, src:'Fed' },
+  { time:'01:01', headline:'CoreWeave prices $3.5 billion 1.75% convertible senior notes due 2032', tags:['markets'], high:false, src:'Corp' },
+];
+
+const newsData2 = [
+  { time:'12:30', headline:'Anthropic agrees to rent computing power from CoreWeave to help power Claude AI models', tags:['markets'], high:false, src:'RTRS' },
+  { time:'12:03', headline:'Anthropic mulling development of in-house AI chips — Reuters sources', tags:['markets'], high:false, src:'RTRS' },
+  { time:'11:32', headline:'Trump: Iran not allowing oil through Strait of Hormuz in line with agreement; current situation is not what was agreed', tags:['iran','oil'], high:true, src:'Trump' },
+  { time:'09:05', headline:'Israeli PM authorises talks with Lebanon following Trump intervention', tags:['geo','iran'], high:true, src:'FT' },
+  { time:'08:21', headline:'Putin announces Orthodox Easter ceasefire in Ukraine from 16:00 Moscow time April 11 until end of day April 12', tags:['geo'], high:true, src:'Kremlin' },
+  { time:'07:34', headline:'Saudi Energy Ministry: total reduction in kingdom production capacity approximately 600k barrels per day after attacks on Manifa, Khurais, Satorp, Ras Tanura, Samref and Riyadh refinery', tags:['oil','geo'], high:true, src:'Saudi' },
+  { time:'07:31', headline:'US crude futures settle at $97.87/bbl, up $3.46 or 3.66%', tags:['oil'], high:true, src:'CME' },
+  { time:'06:42', headline:'Iran Supreme Leader: Moving to a new stage in managing Strait of Hormuz', tags:['oil','iran'], high:true, src:'IranMedia' },
+  { time:'06:00', headline:'Non-Iranian oil tanker crosses Strait of Hormuz for first time since ceasefire — Sky News', tags:['oil','iran'], high:true, src:'Sky' },
+  { time:'05:09', headline:'Israeli PM Netanyahu authorised talks with Lebanon following Trump intervention — FT', tags:['geo','iran'], high:true, src:'FT' },
+  { time:'04:31', headline:'Trump asked Netanyahu to scale back Israel strikes in Lebanon — NBC', tags:['geo','iran'], high:true, src:'NBC' },
+  { time:'03:58', headline:'Trump may use emergency law for Iran tariffs despite court ruling, adviser says — Bloomberg', tags:['iran','macro'], high:true, src:'BBG' },
+  { time:'01:43', headline:"Iran deputy foreign minister: US must stop Israeli attacks on Lebanon; any peace in the region must include Lebanon; 'the coming hours are very critical'", tags:['iran','geo'], high:true, src:'Fars' },
+  { time:'01:32', headline:'US GDP Annualised Q4 final: +0.5% vs est 0.7% | Core PCE quarter-over-quarter: 2.7%', tags:['fed','macro'], high:true, src:'BEA' },
+];
+
+// ══════════════════════════════════════════════
+// TTS ENGINE
+// ══════════════════════════════════════════════
+let voices = [];
+let selectedVoice = null;
+let autoRead = false;
+let isSpeaking = false;
+let isPaused = false;
+let readQueue = [];
+let readIndex = 0;
+let readCount = 0;
+let currentUtterance = null;
+let pauseTimeout = null;
+
+function loadVoices() {
+  voices = speechSynthesis.getVoices();
+  const sel = document.getElementById('voiceSel');
+  sel.innerHTML = '';
+  // Prefer high-quality English voices
+  const preferred = ['Google UK English Male','Google UK English Female','Google US English','Microsoft David','Microsoft Zira','Alex','Samantha','Daniel','Karen'];
+  const engVoices = voices.filter(v => v.lang.startsWith('en'));
+  const sorted = [...engVoices].sort((a,b) => {
+    const ai = preferred.findIndex(p => a.name.includes(p.split(' ')[1] || p));
+    const bi = preferred.findIndex(p => b.name.includes(p.split(' ')[1] || p));
+    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+  });
+  sorted.forEach((v, i) => {
+    const opt = document.createElement('option');
+    opt.value = v.name;
+    opt.textContent = v.name.replace('Google ','').replace('Microsoft ','').slice(0,28);
+    if (i === 0) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  if (sorted.length > 0) selectedVoice = sorted[0];
+}
+
+if (speechSynthesis.onvoiceschanged !== undefined) {
+  speechSynthesis.onvoiceschanged = loadVoices;
+}
+setTimeout(loadVoices, 300);
+
+function updateVoice() {
+  const name = document.getElementById('voiceSel').value;
+  selectedVoice = voices.find(v => v.name === name) || null;
+}
+function updateRate() {}
+
+function cleanForSpeech(text) {
+  return text
+    .replace(/\$(\d)/g, '$1 dollars ')
+    .replace(/(\d+\.\d+)%/g, '$1 percent')
+    .replace(/(\d+)%/g, '$1 percent')
+    .replace(/M\/M/g, 'month over month')
+    .replace(/Y\/Y/g, 'year over year')
+    .replace(/Q\/Q/g, 'quarter over quarter')
+    .replace(/bbl/gi, 'barrel')
+    .replace(/bpd/gi, 'barrels per day')
+    .replace(/ppts?/gi, 'percentage points')
+    .replace(/SPR/g, 'Strategic Petroleum Reserve')
+    .replace(/WTI/g, 'W T I')
+    .replace(/CPI/g, 'C P I')
+    .replace(/PCE/g, 'P C E')
+    .replace(/GDP/g, 'G D P')
+    .replace(/NEC/g, 'N E C')
+    .replace(/CFTC/g, 'C F T C')
+    .replace(/DoE/g, 'Department of Energy')
+    .replace(/&amp;/g, 'and')
+    .replace(/&/g, 'and')
+    .replace(/—/g, '. ')
+    .replace(/\|/g, '. ')
+    .replace(/▲|▼|►|▶/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function speak(text, onEnd) {
+  if (!('speechSynthesis' in window)) { onEnd && onEnd(); return; }
+  speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(cleanForSpeech(text));
+  utt.rate = parseFloat(document.getElementById('rateSel').value) || 0.95;
+  utt.pitch = parseFloat(document.getElementById('pitchRange').value) || 1.0;
+  utt.volume = parseFloat(document.getElementById('volRange').value) || 0.95;
+  if (selectedVoice) utt.voice = selectedVoice;
+  utt.onstart = () => {
+    isSpeaking = true;
+    document.getElementById('speakWave').classList.add('active');
+    document.getElementById('speakText').textContent = text.slice(0, 60) + '…';
+  };
+  utt.onend = () => {
+    isSpeaking = false;
+    document.getElementById('speakWave').classList.remove('active');
+    document.getElementById('speakText').textContent = '';
+    onEnd && onEnd();
+  };
+  utt.onerror = () => { isSpeaking = false; onEnd && onEnd(); };
+  currentUtterance = utt;
+  speechSynthesis.speak(utt);
+}
+
+function speakItem(item, el) {
+  document.querySelectorAll('.news-item.speaking').forEach(e => e.classList.remove('speaking'));
+  if (el) el.classList.add('speaking');
+  const timeLabel = item.time ? `At ${item.time}. ` : '';
+  speak(timeLabel + item.headline);
+  readCount++;
+  document.getElementById('statRead').textContent = readCount;
+}
+
+function toggleAutoRead() {
+  autoRead = !autoRead;
+  const btn = document.getElementById('btnAutoRead');
+  if (autoRead) {
+    btn.classList.add('active');
+    btn.textContent = '⏹ AUTO READ ON';
+    document.getElementById('btnPause').style.display = '';
+    document.getElementById('btnStop').style.display = '';
+    buildQueue();
+    showNotif('AUTO READ', 'Auto-read enabled. Reading headlines sequentially.');
+    playNextInQueue();
+  } else {
+    btn.classList.remove('active');
+    btn.textContent = '▶ AUTO READ';
+    document.getElementById('btnPause').style.display = 'none';
+    document.getElementById('btnStop').style.display = 'none';
+    speechSynthesis.cancel();
+    isSpeaking = false;
+    document.getElementById('speakWave').classList.remove('active');
+    document.getElementById('speakText').textContent = '';
+  }
+}
+
+function buildQueue() {
+  readQueue = [...newsData];
+  readIndex = 0;
+  renderQueue();
+  document.getElementById('statQueue').textContent = readQueue.length;
+}
+
+function playNextInQueue() {
+  if (!autoRead || readIndex >= readQueue.length) {
+    if (autoRead && readIndex >= readQueue.length) {
+      showNotif('QUEUE COMPLETE', 'All headlines have been read.');
+      toggleAutoRead();
+    }
+    return;
+  }
+  const item = readQueue[readIndex];
+  const el = document.getElementById('item-' + readIndex);
+  highlightFeedItem(readIndex);
+  const pauseMs = parseFloat(document.getElementById('pauseRange').value) * 1000;
+  pauseTimeout = setTimeout(() => {
+    speakItem(item, el);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    document.getElementById('statQueue').textContent = Math.max(0, readQueue.length - readIndex - 1);
+    renderQueue();
+    const timeLabel = item.time ? `At ${item.time}. ` : '';
+    const fullText = cleanForSpeech(timeLabel + item.headline);
+    const wordCount = fullText.split(' ').length;
+    const rate = parseFloat(document.getElementById('rateSel').value) || 0.95;
+    const est = (wordCount / (150 * rate)) * 60000 + pauseMs;
+    readIndex++;
+    setTimeout(() => { if (autoRead) playNextInQueue(); }, est);
+  }, readIndex === 0 ? 0 : pauseMs);
+}
+
+function readNext() {
+  if (readIndex < newsData.length) {
+    const item = newsData[readIndex];
+    speakItem(item, document.getElementById('item-' + readIndex));
+    highlightFeedItem(readIndex);
+    readIndex++;
+  }
+}
+
+function pauseResume() {
+  const btn = document.getElementById('btnPause');
+  if (speechSynthesis.paused) {
+    speechSynthesis.resume();
+    isPaused = false;
+    btn.textContent = '⏸ PAUSE';
+  } else {
+    speechSynthesis.pause();
+    isPaused = true;
+    btn.textContent = '▶ RESUME';
+  }
+}
+
+function stopSpeech() {
+  autoRead = false;
+  speechSynthesis.cancel();
+  isSpeaking = false;
+  isPaused = false;
+  clearTimeout(pauseTimeout);
+  document.getElementById('btnAutoRead').classList.remove('active');
+  document.getElementById('btnAutoRead').textContent = '▶ AUTO READ';
+  document.getElementById('btnPause').style.display = 'none';
+  document.getElementById('btnStop').style.display = 'none';
+  document.getElementById('speakWave').classList.remove('active');
+  document.getElementById('speakText').textContent = '';
+  document.querySelectorAll('.news-item.speaking').forEach(e => e.classList.remove('speaking'));
+}
+
+function highlightFeedItem(idx) {
+  document.querySelectorAll('.news-item.active').forEach(e => e.classList.remove('active'));
+  const el = document.getElementById('item-' + idx);
+  if (el) el.classList.add('active');
+}
+
+// ══════════════════════════════════════════════
+// RENDER FEED
+// ══════════════════════════════════════════════
+let currentFilter = 'all';
+
+function tagHtml(tags, high) {
+  let out = '';
+  if (high) out += '<span class="tag hot">HOT</span>';
+  tags.forEach(t => {
+    out += `<span class="tag ${t}">${t.toUpperCase()}</span>`;
+  });
+  return out ? `<div class="news-tags">${out}</div>` : '';
+}
+
+function renderFeed(data, containerId, offset = 0) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  let shown = 0;
+  data.forEach((item, i) => {
+    const idx = offset + i;
+    const visible = currentFilter === 'all' || item.tags.includes(currentFilter);
+    const div = document.createElement('div');
+    div.className = 'news-item' + (item.high ? ' high' : '');
+    div.id = 'item-' + idx;
+    div.style.display = visible ? '' : 'none';
+    div.innerHTML = `
+      <div class="news-time">${item.time}</div>
+      <div class="news-body">
+        <div class="news-headline">${item.headline}</div>
+        <div class="news-source">${item.src}</div>
+        ${tagHtml(item.tags, item.high)}
+      </div>
+      <button class="speak-btn" title="Read aloud" onclick="speakSingle(${idx},this); event.stopPropagation();">🔊</button>
+    `;
+    div.addEventListener('click', () => speakSingle(idx, div.querySelector('.speak-btn')));
+    el.appendChild(div);
+    if (visible) shown++;
+  });
+  return shown;
+}
+
+function speakSingle(idx, btn) {
+  const allData = [...newsData, ...newsData2];
+  document.querySelectorAll('.speak-btn.active-speak').forEach(b => b.classList.remove('active-speak'));
+  btn.classList.add('active-speak');
+  speakItem(allData[idx], document.getElementById('item-' + idx));
+  setTimeout(() => btn.classList.remove('active-speak'), 3000);
+}
+
+function filterFeed(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelectorAll('.news-item').forEach(el => {
+    if (filter === 'all') { el.style.display = ''; return; }
+    const idx = parseInt(el.id.replace('item-',''));
+    const allData = [...newsData, ...newsData2];
+    el.style.display = allData[idx] && allData[idx].tags.includes(filter) ? '' : 'none';
+  });
+}
+
+function renderQueue() {
+  const el = document.getElementById('queueList');
+  if (!autoRead || readQueue.length === 0) {
+    el.innerHTML = '<div class="empty">Queue empty — enable Auto Read</div>';
+    return;
+  }
+  el.innerHTML = '';
+  readQueue.slice(readIndex, readIndex + 10).forEach((item, i) => {
+    const div = document.createElement('div');
+    div.className = 'queue-item' + (i === 0 ? ' now' : '');
+    div.innerHTML = `<div class="queue-num">${i === 0 ? '▶' : (i + 1)}</div><div class="queue-text">${item.headline.slice(0,80)}…</div>`;
+    el.appendChild(div);
+  });
+}
+
+function updateStats() {
+  document.getElementById('statTotal').textContent = newsData.length + newsData2.length;
+  const high = [...newsData, ...newsData2].filter(i => i.high).length;
+  document.getElementById('statHigh').textContent = high;
+}
+
+function renderCategories() {
+  const cats = { OIL: 0, IRAN: 0, GEO: 0, FED: 0, MACRO: 0, MARKETS: 0 };
+  const colors = { OIL:'#f0a500', IRAN:'#e05252', GEO:'#ff7a7a', FED:'#4a9eff', MACRO:'#3ecf6e', MARKETS:'#8a9ab0' };
+  [...newsData, ...newsData2].forEach(item => {
+    item.tags.forEach(t => { if (cats[t.toUpperCase()] !== undefined) cats[t.toUpperCase()]++; });
+  });
+  const max = Math.max(...Object.values(cats));
+  const el = document.getElementById('catList');
+  el.innerHTML = Object.entries(cats).map(([k, v]) => `
+    <div class="cat-row">
+      <div class="cat-label">${k}</div>
+      <div class="cat-bar-wrap"><div class="cat-bar" style="width:${Math.round(v/max*100)}%;background:${colors[k]}"></div></div>
+      <div class="cat-count">${v}</div>
+    </div>
+  `).join('');
+}
+
+// ══════════════════════════════════════════════
+// CLOCK
+// ══════════════════════════════════════════════
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toUTCString().slice(17,25) + ' UTC';
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ══════════════════════════════════════════════
+// NOTIFICATION
+// ══════════════════════════════════════════════
+function showNotif(head, text) {
+  const el = document.getElementById('notif');
+  document.getElementById('notifHead').textContent = head;
+  document.getElementById('notifText').textContent = text;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+renderFeed(newsData, 'feedList', 0);
+renderFeed(newsData2, 'feedList2', newsData.length);
+updateStats();
+renderCategories();
+
+// Simulate new incoming item after 8s
+setTimeout(() => {
+  const item = { time: '09:15', headline: 'Lebanon-Israel ceasefire talks confirmed for Tuesday in Washington D.C. — US State Department', tags: ['geo','iran'], high: true, src: 'StateDept' };
+  const div = document.createElement('div');
+  div.className = 'news-item high';
+  div.id = 'item-live';
+  div.innerHTML = `
+    <div class="news-time">${item.time}</div>
+    <div class="news-body">
+      <div class="news-headline">${item.headline}</div>
+      <div class="news-source">${item.src} — LIVE UPDATE</div>
+      ${tagHtml(item.tags, item.high)}
+    </div>
+    <button class="speak-btn" title="Read aloud" onclick="speakItem({headline:'${item.headline}'},this); event.stopPropagation();">🔊</button>
+  `;
+  const list = document.getElementById('feedList');
+  list.insertBefore(div, list.firstChild);
+  showNotif('NEW HEADLINE', item.headline.slice(0,60) + '…');
+  updateStats();
+}, 8000);
+</script>
+</body>
+</html>
