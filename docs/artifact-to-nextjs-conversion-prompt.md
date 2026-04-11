@@ -1,22 +1,14 @@
-# Claude Code: Artifact to Next.js Conversion Automation
+You are an expert full-stack engineer working on **FinPulse**, a real-time financial news hub built with **Next.js (App Router), TypeScript, and Tailwind CSS**. Your task is to:
 
-## Quick Start
-Copy and paste this entire prompt into Claude Code (terminal or IDE) with your artifact code.
+## System / Project Context
 
----
+1. **ANALYZE** the artifact: TradeNewsCast/docs/tradenewscast_v2.html
 
-## MASTER CONVERSION PROMPT
-
-```
-You are a Next.js + TypeScript expert. I will provide you with a Claude Artifact code 
-(HTML, CSS, JavaScript, or React component). Your task is to:
-
-1. **ANALYZE** the artifact:
    - Identify all components, state, side effects, and styling
    - List all dependencies and external libraries
    - Note any direct DOM manipulation or vanilla JS patterns
 
-2. **CONVERT** to production-ready Next.js:
+2. **CONVERT** to production-ready Next.js to be integrated with https://vercel.com:
    - Create a complete Next.js project structure
    - Convert to React components with proper TypeScript types
    - Add 'use client' directive where needed
@@ -67,10 +59,8 @@ IMPORTANT:
 - Do NOT use inline styles; use Tailwind or CSS modules
 - Make sure all code is production-ready and follows best practices
 
-When ready, respond with "I'm ready to convert your artifact. Please paste the artifact code below."
+When ready, respond with "SEE WHAT I'VE DONE!"
 ```
-
----
 
 ## HOW TO USE IN CLAUDE CODE
 

@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── IBM Plex fonts ────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+/* ── Global reset ──────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; overflow: hidden; }
+
+/* ── Ticker animation ──────────────────────────────────────────────────── */
+@keyframes ticker {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ── Voice wave bars ───────────────────────────────────────────────────── */
+@keyframes wave {
+  0%, 100% { transform: scaleY(0.4); }
+  50%       { transform: scaleY(1);   }
+}
+
+/* ── Feed item flash-in ────────────────────────────────────────────────── */
+@keyframes freshin {
+  from { background-color: rgba(240, 165, 0, 0.18); transform: translateX(-4px); }
+  to   { background-color: transparent;              transform: translateX(0);    }
+}
+
+/* ── Status dot pulse ──────────────────────────────────────────────────── */
+@keyframes pulseDot {
+  0%, 100% { opacity: 1;   }
+  50%       { opacity: 0.3; }
+}
+
+/* ── Status text blink ─────────────────────────────────────────────────── */
+@keyframes blink {
+  0%, 100% { opacity: 1;   }
+  50%       { opacity: 0.5; }
+}
+
+/* ── Interrupt flash (position: fixed overlay) ─────────────────────────── */
+.interrupt-flash {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #e05252, transparent);
+  animation: iflash 0.6s ease forwards;
+  pointer-events: none;
+  z-index: 999;
+}
+@keyframes iflash {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ── Scrollbars ────────────────────────────────────────────────────────── */
+.scrollbar-thin::-webkit-scrollbar       { width: 3px; }
+.scrollbar-thumb-tnc-border2::-webkit-scrollbar-thumb {
+  background: #252f3f;
+  border-radius: 2px;
+}
+
+/* ── Range input thumb ─────────────────────────────────────────────────── */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #f0a500;
+  cursor: pointer;
+}
+input[type='range']::-moz-range-thumb {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #f0a500;
+  cursor: pointer;
+  border: none;
+}
