@@ -23,7 +23,7 @@ const config: Config = {
           muted:   '#4a5568',
           text:    '#c0cdd8',
           text2:   '#7a8fa0',
-          text3:   '#3a4a5a',
+          text3:   '#d48e16',
         },
       },
       fontFamily: {

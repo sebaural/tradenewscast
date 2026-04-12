@@ -91,7 +91,7 @@ export const NewsItem = memo(function NewsItem({ item, isFresh }: NewsItemProps)
           {item.headline}
         </div>
         <div className="flex items-center gap-[6px] flex-wrap mt-1">
-          <span className="font-mono text-[9px] text-tnc-text3 tracking-[0.3px]">
+          <span className="font-mono text-[9px] text-[rgb(46,131,216)] tracking-[0.3px]">
             {item.src}
           </span>
           {item._dup && (
