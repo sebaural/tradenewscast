@@ -114,8 +114,14 @@ export function isDuplicate(item: EnrichedItem, existing: EnrichedItem[]): boole
 
 export function parseLiveSquawk(html: string): RawNewsItem[] {
   const items: RawNewsItem[] = [];
-  const lines = html
-    .replace(/<[^>]+>/g, '\n')
+  
+  // Remove script and style blocks before stripping other HTML tags
+  let cleaned = html
+    .replace(/<script\b[\s\S]*?<\/script>/gi, '')
+    .replace(/<style\b[\s\S]*?<\/style>/gi, '')
+    .replace(/<[^>]+>/g, '\n');
+  
+  const lines = cleaned
     .split('\n')
     .map(l => l.trim())
     .filter(Boolean);
@@ -145,6 +151,12 @@ export function parseLiveSquawk(html: string): RawNewsItem[] {
           next.startsWith('http') ||
           next.startsWith('READ HERE') ||
           next.startsWith('CLICK HERE')
+        ) { i++; continue; }
+
+        // Filter out lines that look like code
+        if (
+          /\bvar\s+\w+\s*=|function\s*\(|\blet\s+|\bconst\s+|\/\*.*\*\/|^\/\/|;\s*$/.test(next) ||
+          /[\{\}\[\];:=&|<>]/.test(next.slice(-5)) // ends with code-like chars
         ) { i++; continue; }
 
         if (next.length > 5 && next.length < 500) parts.push(next);
