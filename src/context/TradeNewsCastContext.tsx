@@ -25,14 +25,9 @@ import type {
   VoiceSettings,
 } from '@/types';
 
-// ─── Proxy list for LiveSquawk CORS bypass ────────────────────────────────
+// ─── Feed endpoint (server-side fetch to avoid browser CORS issues) ───────
 
-const FEED_URL = 'https://www.livesquawk.com/partner_messenger/embedded_content.php?partner_name=Infront2&';
-const PROXY_URLS = [
-  'https://api.allorigins.win/raw?url=',
-  'https://corsproxy.io/?',
-  'https://api.codetabs.com/v1/proxy?quest=',
-] as const;
+const FEED_ENDPOINT = '/api/livesquawk';
 
 // ─── Default values ───────────────────────────────────────────────────────
 
@@ -359,28 +354,25 @@ export function TradeNewsCastProvider({ children }: { children: React.ReactNode 
 
   const fetchFeed = useCallback(async () => {
     setParseStatus('parsing', 'FETCHING…');
-    for (let attempt = 0; attempt < PROXY_URLS.length; attempt++) {
-      const idx = (proxyIndexRef.current + attempt) % PROXY_URLS.length;
-      const url = PROXY_URLS[idx] + encodeURIComponent(FEED_URL);
-      try {
-        const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const html  = await res.text();
-        const items = parseLiveSquawk(html);
-        if (items.length > 0) {
-          proxyIndexRef.current  = idx;
-          parseErrorsRef.current = 0;
-          processItems(items);
-          setParseStatus('live', 'LIVE · LiveSquawk');
-          return;
-        }
-      } catch {
-        // Try next proxy
+    try {
+      const res = await fetch(FEED_ENDPOINT, { signal: AbortSignal.timeout(10_000) });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const html  = await res.text();
+      const items = parseLiveSquawk(html);
+
+      if (items.length > 0) {
+        parseErrorsRef.current = 0;
+        processItems(items);
+        setParseStatus('live', 'LIVE · LiveSquawk');
+        return;
       }
+    } catch {
+      // handled below
     }
+
     parseErrorsRef.current++;
     if (parseErrorsRef.current > 3) {
-      setParseStatus('error', 'PROXY ERROR — demo data');
+      setParseStatus('error', 'FEED ERROR — demo data');
     } else {
       setParseStatus('parsing', 'RETRYING…');
     }

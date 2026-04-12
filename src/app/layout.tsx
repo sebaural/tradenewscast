@@ -6,6 +6,11 @@ export const metadata: Metadata = {
   description: 'Real-time financial news with automated voice reading, priority scoring, and market intelligence.',
   keywords:    ['financial news', 'live feed', 'TTS', 'trading', 'market intelligence'],
   robots:      { index: false, follow: false },
+  icons: {
+    icon: '/TNC_logo.png',
+    shortcut: '/TNC_logo.png',
+    apple: '/TNC_logo.png',
+  },
 };
 
 export const viewport: Viewport = {
