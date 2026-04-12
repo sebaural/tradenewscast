@@ -110,6 +110,35 @@ export function isDuplicate(item: EnrichedItem, existing: EnrichedItem[]): boole
   return false;
 }
 
+// ─── HTML entity decoder ──────────────────────────────────────────────────
+// Covers named entities, decimal &#123; and hex &#x7B; references.
+// Uses the DOM in browser environments; falls back to a regex map server-side.
+
+const NAMED_ENTITIES: Record<string, string> = {
+  amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: '\u00A0',
+  bull: '•', middot: '·',
+  ldquo: '\u201C', rdquo: '\u201D',
+  lsquo: '\u2018', rsquo: '\u2019',
+  laquo: '«', raquo: '»',
+  hellip: '…', mdash: '—', ndash: '–',
+  trade: '™', copy: '©', reg: '®',
+  euro: '€', pound: '£', yen: '¥', cent: '¢',
+  'frac12': '½', 'frac14': '¼', 'frac34': '¾',
+};
+
+function decodeEntities(text: string): string {
+  if (typeof document !== 'undefined') {
+    const ta = document.createElement('textarea');
+    ta.innerHTML = text;
+    return ta.value;
+  }
+  // Server-side fallback
+  return text
+    .replace(/&#x([0-9a-fA-F]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(Number(d)))
+    .replace(/&([a-z]+);/gi, (m, name) => NAMED_ENTITIES[name.toLowerCase()] ?? m);
+}
+
 // ─── LiveSquawk HTML parser ───────────────────────────────────────────────
 
 export function parseLiveSquawk(html: string): RawNewsItem[] {
@@ -159,8 +188,9 @@ export function parseLiveSquawk(html: string): RawNewsItem[] {
           /[\{\}\[\];:=&|<>]/.test(next.slice(-5)) // ends with code-like chars
         ) { i++; continue; }
 
-        if (next.length > 5 && next.length < 500) parts.push(next);
-        else if (next.startsWith('-') && parts.length > 0) parts.push(next);
+        const decoded = decodeEntities(next);
+        if (decoded.length > 5 && decoded.length < 500) parts.push(decoded);
+        else if (decoded.startsWith('-') && parts.length > 0) parts.push(decoded);
 
         i++;
         if (parts.length >= 6) break;
