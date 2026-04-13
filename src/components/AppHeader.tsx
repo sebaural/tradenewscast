@@ -34,7 +34,7 @@ export const AppHeader = memo(function AppHeader() {
   const clock = useClock();
 
   return (
-    <header className="bg-tnc-bg2 border-b border-tnc-border h-12 px-4 flex items-center justify-between flex-shrink-0">
+    <header className="bg-tnc-bg2 border-b border-tnc-border h-12 pl-4 pr-0 sm:px-4 flex items-center justify-between flex-shrink-0">
       {/* Logo */}
       <div className="font-mono text-[1.5rem] font-semibold text-white tracking-[-0.5px]">
         Trade<span className="text-tnc-accent">News</span>Cast{' '}
@@ -44,11 +44,11 @@ export const AppHeader = memo(function AppHeader() {
       </div>
 
       {/* Right side */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4 mr-[10px] sm:mr-0">
         {/* <StatusPill /> */}
 
         {/* Live feed badge */}
-        <div className="flex items-center gap-[5px] font-mono text-[10px] tracking-[1px] px-[10px] py-[3px] rounded-[3px] border border-tnc-green/30 text-tnc-green">
+        <div className="flex items-center gap-[5px] font-mono text-[8px] sm:text-[10px] tracking-[1px] px-[10px] py-[3px] rounded-[3px] border border-tnc-green/30 text-tnc-green">
           <span className="w-[6px] h-[6px] rounded-full bg-current animate-pulse-dot" />
           <span>LIVE FEED</span>
         </div>
