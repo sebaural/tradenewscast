@@ -37,7 +37,7 @@ export const NewsFeed = memo(function NewsFeed() {
           <span className="font-mono text-[9px] font-semibold tracking-[2px] uppercase text-tnc-muted">
             INTELLIGENCE FEED
           </span>
-          <span className="font-mono text-[9px] bg-tnc-accent/10 text-tnc-accent border border-tnc-accent/20 px-[7px] py-[1px] rounded-[10px] mr-[8px] sm:mr-0">
+          <span className="font-mono text-[9px] bg-tnc-accent/10 text-tnc-accent border border-tnc-accent/20 px-[7px] py-[1px] rounded-[10px] mr-[8px] sm:mr-0 text-center">
             {allItems.length} items
           </span>
         </div>
