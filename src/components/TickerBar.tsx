@@ -15,13 +15,14 @@ const dirClass: Record<string, string> = {
  */
 export const TickerBar = memo(function TickerBar() {
   return (
-    <div className="h-[26px] bg-tnc-accent flex items-center flex-shrink-0 overflow-hidden">
+    <div className="h-[30px] bg-tnc-accent flex items-center flex-shrink-0 overflow-hidden">
       {/* LIVE label */}
-      <div className="h-full px-3 bg-black flex items-center flex-shrink-0">
+     {/*  <div className="h-full px-3 bg-black flex items-center flex-shrink-0">
         <span className="font-mono text-[10px] font-semibold text-tnc-accent tracking-[2px] leading-none">
           LIVE
         </span>
-      </div>
+      </div> */}
+      <div className="h-[32px] w-[34px]"><img  className="h-[32px] w-[34px]" src="/TNC_logo.png" alt="TradeNewsCast" /></div>
 
       {/* Scrolling track */}
       <div className="overflow-hidden flex-1">
