@@ -44,16 +44,16 @@ export const AppHeader = memo(function AppHeader() {
       </div>
 
       {/* Right side */}
-      <div className="flex items-center gap-2 sm:gap-4 mr-[10px] sm:mr-0">
+      <div className="flex items-center gap-2 max-[375px]:gap-1 sm:gap-4 mr-[10px] sm:mr-0">
         {/* <StatusPill /> */}
 
         {/* Live feed badge */}
-        <div className="flex items-center gap-[5px] font-mono text-[8px] sm:text-[10px] tracking-[1px] px-[10px] py-[3px] rounded-[3px] border border-tnc-green/30 text-tnc-green">
+        <div className="flex items-center flex-shrink-0 gap-[5px] max-[375px]:gap-1 font-mono text-[8px] sm:text-[10px] tracking-[1px] px-[10px] max-[375px]:px-[8px] py-[3px] rounded-[3px] border border-tnc-green/30 text-tnc-green whitespace-nowrap">
           <span className="w-[6px] h-[6px] rounded-full bg-current animate-pulse-dot" />
-          <span>LIVE FEED</span>
+          <span className="whitespace-nowrap">LIVE FEED</span>
         </div>
 
-        <span className="font-mono text-[11px] text-tnc-text2 tracking-[0.5px]">
+        <span className="font-mono text-[11px] max-[375px]:text-[10px] text-tnc-text2 tracking-[0.5px] whitespace-nowrap flex-shrink-0">
           {clock}
         </span>
       </div>
