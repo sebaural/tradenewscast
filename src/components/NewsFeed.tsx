@@ -32,16 +32,16 @@ export const NewsFeed = memo(function NewsFeed() {
   return (
     <div className="flex flex-col overflow-hidden border-r border-tnc-border">
       {/* Column header */}
-      <div className="bg-tnc-bg2 border-b border-tnc-border px-[14px] py-2 flex items-center justify-between flex-shrink-0">
+      <div className="bg-tnc-bg2 border-b border-tnc-border px-[14px] py-1 sm:py-2 flex items-center items-start sm:items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-[10px]">
           <span className="font-mono text-[9px] font-semibold tracking-[2px] uppercase text-tnc-muted">
             INTELLIGENCE FEED
           </span>
-          <span className="font-mono text-[9px] bg-tnc-accent/10 text-tnc-accent border border-tnc-accent/20 px-[7px] py-[1px] rounded-[10px]">
+          <span className="font-mono text-[9px] bg-tnc-accent/10 text-tnc-accent border border-tnc-accent/20 px-[7px] py-[1px] rounded-[10px] mr-[8px] sm:mr-0">
             {allItems.length} items
           </span>
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-1 flex-wrap sm:flex-nowrap">
           {FILTERS.map(f => (
             <button
               key={f.key}
