@@ -147,6 +147,8 @@ export function TradeNewsCastProvider({ children }: { children: React.ReactNode 
   const watchlistRef     = useRef<string[]>(['OIL','FED','CPI','IRAN','HORMUZ','NFP','FOMC']);
   const lastSpokenRef    = useRef<EnrichedItem | null>(null);
   const interruptPolicyRef = useRef<InterruptPolicy>('critical');
+  const userActivatedRef   = useRef(false);
+  const activationHintRef  = useRef(false);
 
   // Keep refs in sync with state
   isPlayingRef.current    = isPlaying;
@@ -282,7 +284,8 @@ export function TradeNewsCastProvider({ children }: { children: React.ReactNode 
       isPlayingRef.current ||
       isPausedRef.current  ||
       !autoOnRef.current   ||
-      Date.now() < muteUntilRef.current
+      Date.now() < muteUntilRef.current ||
+      !userActivatedRef.current
     ) return;
     const q = readQueueRef.current;
     if (q.length === 0) return;
@@ -363,6 +366,25 @@ export function TradeNewsCastProvider({ children }: { children: React.ReactNode 
       return updated.map((item, idx) => idx >= newCount ? { ...item, _new: false } : item);
     });
   }, [scheduleItem]);
+
+  // ── User activation gate for speech synthesis ─────────────────────────────
+  useEffect(() => {
+    const markActivated = () => {
+      if (userActivatedRef.current) return;
+      userActivatedRef.current = true;
+      activationHintRef.current = false;
+      if (autoOnRef.current) setTimeout(() => triggerQueue(), 0);
+    };
+
+    const options: AddEventListenerOptions = { passive: true };
+    window.addEventListener('pointerdown', markActivated, options);
+    window.addEventListener('keydown', markActivated, options);
+
+    return () => {
+      window.removeEventListener('pointerdown', markActivated);
+      window.removeEventListener('keydown', markActivated);
+    };
+  }, [triggerQueue]);
 
   // ── Live feed polling ─────────────────────────────────────────────────────
   const setParseStatus = useCallback((status: AppState['parseStatus'], text: string) => {
@@ -466,7 +488,14 @@ export function TradeNewsCastProvider({ children }: { children: React.ReactNode 
     const next = !autoOnRef.current;
     setAutoOn(next);
     if (next) {
-      showNotif('AUTO READ ON', 'Reading news in real time');
+      if (!userActivatedRef.current) {
+        if (!activationHintRef.current) {
+          showNotif('AUTO READ ARMED', 'Click anywhere to enable voice playback');
+          activationHintRef.current = true;
+        }
+      } else {
+        showNotif('AUTO READ ON', 'Reading news in real time');
+      }
       setTimeout(triggerQueue, 100);
     } else {
       window.speechSynthesis?.cancel();
