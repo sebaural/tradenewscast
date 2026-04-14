@@ -175,21 +175,39 @@ export function TradeNewsCastProvider({ children }: { children: React.ReactNode 
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
     const all = window.speechSynthesis.getVoices();
     if (all.length === 0) return;
-    const english = all.filter(v => v.lang.startsWith('en'));
+
+    const normalizeLang = (lang: string) => lang.toLowerCase().replace('_', '-');
+    const usEnglish = all.filter(v => normalizeLang(v.lang).startsWith('en-us'));
+    const gbEnglish = all.filter(v => normalizeLang(v.lang).startsWith('en-gb'));
+
     const preferred = [
       'Google UK English Male','Google UK English Female','Google US English',
       'Microsoft David','Microsoft Zira','Microsoft Mark',
       'Alex','Samantha','Daniel','Karen','Moira','Fiona',
     ];
-    const sorted = [...english].sort((a, b) => {
+
+    const byPreference = (a: SpeechSynthesisVoice, b: SpeechSynthesisVoice) => {
       const ai = preferred.findIndex(p => a.name.includes(p.split(' ').pop()!));
       const bi = preferred.findIndex(p => b.name.includes(p.split(' ').pop()!));
       return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
+    };
+
+    const pickTop = (voices: SpeechSynthesisVoice[]) => {
+      if (voices.length === 0) return null;
+      return [...voices].sort(byPreference)[0];
+    };
+
+    const usTop = pickTop(usEnglish);
+    const gbTop = pickTop(gbEnglish);
+    const restricted = [usTop, gbTop].filter(Boolean) as SpeechSynthesisVoice[];
+
+    setVoices(restricted);
+    setVoiceSettingsState(prev => {
+      const hasSelected = restricted.some(v => v.name === prev.selectedVoiceName);
+      return hasSelected
+        ? prev
+        : { ...prev, selectedVoiceName: restricted[0]?.name ?? '' };
     });
-    setVoices(sorted);
-    setVoiceSettingsState(prev =>
-      prev.selectedVoiceName ? prev : { ...prev, selectedVoiceName: sorted[0]?.name ?? '' },
-    );
   }, []);
 
   useEffect(() => {

@@ -154,7 +154,6 @@ export const VoiceControlBar = memo(function VoiceControlBar() {
       <Sep />
 
       <Btn onClick={() => muteMins(5)}>MUTE 5m</Btn>
-      <Btn onClick={() => muteMins(15)}>MUTE 15m</Btn>
       <Btn onClick={openSettings}>⚙ RULES</Btn>
 
       {/* Voice selector */}
@@ -165,7 +164,9 @@ export const VoiceControlBar = memo(function VoiceControlBar() {
       >
         {voices.map(v => (
           <option key={v.name} value={v.name}>
-            {v.name.replace('Google ', '').replace('Microsoft ', '').slice(0, 26)}
+            {v.lang.toLowerCase().replace('_', '-').startsWith('en-gb')
+              ? 'English (Great Britain)'
+              : 'English (America)'}
           </option>
         ))}
       </SelectEl>

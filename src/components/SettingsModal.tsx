@@ -172,7 +172,7 @@ export const SettingsModal = memo(function SettingsModal() {
             MUTE TIMER
           </div>
           <div className="flex gap-[6px] flex-wrap">
-            {([5, 15, 60] as const).map(m => (
+            {([5, 60] as const).map(m => (
               <PolicyBtn key={m} active={false} onClick={() => muteMins(m)}>
                 MUTE {m < 60 ? `${m} min` : '1 hour'}
               </PolicyBtn>
