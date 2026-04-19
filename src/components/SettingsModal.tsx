@@ -2,7 +2,7 @@
 
 import React, { memo } from 'react';
 import { useApp } from '@/context/TradeNewsCastContext';
-import type { InterruptPolicy, Rules, TraderProfile } from '@/types';
+import type { InterruptPolicy, ReadingMode, Rules, TraderProfile } from '@/types';
 
 // ── Toggle switch ─────────────────────────────────────────────────────────
 
@@ -73,6 +73,29 @@ function PolicyBtn({
   );
 }
 
+function SelectEl({
+  value, onChange, children, className = '',
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      className={
+        `font-mono text-[10px] bg-tnc-bg text-tnc-text
+         border border-tnc-border2 rounded-[3px] px-2 h-8
+         cursor-pointer outline-none hover:border-tnc-accent focus:border-tnc-accent ${className}`
+      }
+    >
+      {children}
+    </select>
+  );
+}
+
 // ── Modal ─────────────────────────────────────────────────────────────────
 
 const INTERRUPT_POLICIES: { value: InterruptPolicy; label: string }[] = [
@@ -88,9 +111,27 @@ const PROFILES: { value: TraderProfile; label: string }[] = [
   { value: 'macro',     label: 'MACRO / FOREX' },
 ];
 
+const RATE_OPTIONS = [
+  { value: '0.85', label: '0.85×' },
+  { value: '0.92', label: '0.92×' },
+  { value: '1.0',  label: '1.0×'  },
+  { value: '1.1',  label: '1.1×'  },
+  { value: '1.25', label: '1.25×' },
+];
+
+const MODE_OPTIONS: { value: ReadingMode; label: string }[] = [
+  { value: 'headline',  label: 'HEADLINE ONLY'       },
+  { value: 'summary',   label: 'HEADLINE + CONTEXT'  },
+  { value: 'breaking',  label: 'BREAKING ONLY'       },
+  { value: 'watchlist', label: 'WATCHLIST ONLY'      },
+  { value: 'full',      label: 'FULL READ'           },
+];
+
 export const SettingsModal = memo(function SettingsModal() {
   const {
     isSettingsOpen, closeSettings,
+    readingMode, setReadingMode,
+    voiceSettings, setVoiceSettings, voices,
     rules, setRules,
     interruptPolicy, setInterruptPolicy,
     muteMins, unmute,
@@ -163,6 +204,57 @@ export const SettingsModal = memo(function SettingsModal() {
                 {p.label}
               </PolicyBtn>
             ))}
+          </div>
+        </section>
+
+        {/* Voice & reading */}
+        <section className="mb-4">
+          <div className="font-mono text-[9px] tracking-[2px] text-tnc-muted uppercase mb-[10px] pb-[5px] border-b border-tnc-border">
+            VOICE & READING
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="bg-tnc-bg3 border border-tnc-border rounded-[4px] p-[8px_10px]">
+              <div className="font-mono text-[9px] tracking-[1.5px] text-tnc-text3 mb-[6px]">MODE</div>
+              <SelectEl
+                value={readingMode}
+                onChange={v => setReadingMode(v as ReadingMode)}
+                className="w-full"
+              >
+                {MODE_OPTIONS.map(o => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </SelectEl>
+            </div>
+
+            <div className="bg-tnc-bg3 border border-tnc-border rounded-[4px] p-[8px_10px]">
+              <div className="font-mono text-[9px] tracking-[1.5px] text-tnc-text3 mb-[6px]">VOICE</div>
+              <SelectEl
+                value={voiceSettings.selectedVoiceName}
+                onChange={v => setVoiceSettings({ selectedVoiceName: v })}
+                className="w-full"
+              >
+                {voices.map(v => (
+                  <option key={v.name} value={v.name}>
+                    {v.lang.toLowerCase().replace('_', '-').startsWith('en-gb')
+                      ? 'English (Great Britain)'
+                      : 'English (America)'}
+                  </option>
+                ))}
+              </SelectEl>
+            </div>
+
+            <div className="bg-tnc-bg3 border border-tnc-border rounded-[4px] p-[8px_10px]">
+              <div className="font-mono text-[9px] tracking-[1.5px] text-tnc-text3 mb-[6px]">SPEED</div>
+              <SelectEl
+                value={String(voiceSettings.rate)}
+                onChange={v => setVoiceSettings({ rate: parseFloat(v) })}
+                className="w-full"
+              >
+                {RATE_OPTIONS.map(o => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </SelectEl>
+            </div>
           </div>
         </section>
 

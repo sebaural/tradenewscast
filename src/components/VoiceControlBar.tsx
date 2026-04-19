@@ -3,23 +3,6 @@
 import React, { memo } from 'react';
 import { useApp } from '@/context/TradeNewsCastContext';
 import { VoiceWave } from './VoiceWave';
-import type { ReadingMode } from '@/types';
-
-const RATE_OPTIONS = [
-  { value: '0.85', label: '0.85×' },
-  { value: '0.92', label: '0.92×' },
-  { value: '1.0',  label: '1.0×'  },
-  { value: '1.1',  label: '1.1×'  },
-  { value: '1.25', label: '1.25×' },
-];
-
-const MODE_OPTIONS: { value: ReadingMode; label: string }[] = [
-  { value: 'headline',  label: 'HEADLINE ONLY'       },
-  { value: 'summary',   label: 'HEADLINE + CONTEXT'  },
-  { value: 'breaking',  label: 'BREAKING ONLY'       },
-  { value: 'watchlist', label: 'WATCHLIST ONLY'      },
-  { value: 'full',      label: 'FULL READ'           },
-];
 
 const Sep = () => (
   <div className="w-px h-6 bg-tnc-border2 flex-shrink-0" />
@@ -49,36 +32,12 @@ const Btn = memo(function Btn({
   );
 });
 
-const SelectEl = memo(function SelectEl({
-  value, onChange, children, className = '',
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <select
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      className={
-        `font-mono text-[10px] bg-tnc-bg text-tnc-text
-         border border-tnc-border2 rounded-[3px] px-2 h-7
-         cursor-pointer outline-none ${className}`
-      }
-    >
-      {children}
-    </select>
-  );
-});
-
 export const VoiceControlBar = memo(function VoiceControlBar() {
   const {
-    autoOn, isPlaying, isPaused, readingMode, voiceSettings, voices,
+    autoOn, isPlaying, isPaused,
     activeFeedItem,
     toggleAuto, togglePause, stopAll, replayLast, skipCurrent,
-    muteMins, openSettings,
-    setReadingMode, setVoiceSettings,
+    openSettings,
   } = useApp();
 
   const nowReadingItem = useApp().allItems.find(i => i._id === activeFeedItem);
@@ -126,21 +85,9 @@ export const VoiceControlBar = memo(function VoiceControlBar() {
       <Btn onClick={replayLast} title="Replay last">↩ REPLAY</Btn>
       <Btn onClick={skipCurrent} title="Skip current">⏭ SKIP</Btn>
 
-      <Sep />
+      {/* <Sep />
 
-      {/* Reading mode */}
-      <SelectEl
-        value={readingMode}
-        onChange={v => setReadingMode(v as ReadingMode)}
-      >
-        {MODE_OPTIONS.map(o => (
-          <option key={o.value} value={o.value}>{o.label}</option>
-        ))}
-      </SelectEl>
-
-      <Sep />
-
-      {/* Now reading */}
+      Now reading
       <div className="flex items-center gap-2 flex-1 min-w-0 max-w-[360px]">
         <VoiceWave visible={isPlaying && !isPaused} />
         <span className="font-mono text-[9px] text-tnc-muted tracking-[1.5px] whitespace-nowrap">
@@ -151,35 +98,9 @@ export const VoiceControlBar = memo(function VoiceControlBar() {
         </span>
       </div>
 
-      <Sep />
+      <Sep /> */}
 
-      <Btn onClick={() => muteMins(5)}>MUTE 5m</Btn>
-      <Btn onClick={openSettings}>⚙ RULES</Btn>
-
-      {/* Voice selector */}
-      <SelectEl
-        value={voiceSettings.selectedVoiceName}
-        onChange={v => setVoiceSettings({ selectedVoiceName: v })}
-        className="max-w-[140px]"
-      >
-        {voices.map(v => (
-          <option key={v.name} value={v.name}>
-            {v.lang.toLowerCase().replace('_', '-').startsWith('en-gb')
-              ? 'English (Great Britain)'
-              : 'English (America)'}
-          </option>
-        ))}
-      </SelectEl>
-
-      {/* Rate selector */}
-      <SelectEl
-        value={String(voiceSettings.rate)}
-        onChange={v => setVoiceSettings({ rate: parseFloat(v) })}
-      >
-        {RATE_OPTIONS.map(o => (
-          <option key={o.value} value={o.value}>{o.label}</option>
-        ))}
-      </SelectEl>
+      <Btn onClick={openSettings}><span className="text-[18px] leading-none">⚙</span> RULES</Btn>
     </div>
   );
 });
