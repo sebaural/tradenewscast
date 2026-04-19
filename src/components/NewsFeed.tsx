@@ -9,7 +9,7 @@ import type { FilterType } from '@/types';
 // ── Filter buttons ─────────────────────────────────────────────────────────
 
 const FILTERS: { key: FilterType; label: string }[] = [
-  { key: 'all',   label: 'ALL'       },
+  { key: 'all',   label: 'All Categories'       },
   { key: 'oil',   label: 'OIL'       },
   { key: 'iran',  label: 'IRAN/GEO'  },
   { key: 'fed',   label: 'FED'       },
@@ -41,24 +41,24 @@ export const NewsFeed = memo(function NewsFeed() {
             {allItems.length} items
           </span>
         </div>
-        <div className="flex gap-1 flex-wrap sm:flex-nowrap">
+        <select
+          value={currentFilter}
+          onChange={e => setFilter(e.target.value as FilterType)}
+          className="
+            font-mono text-[9px] cursor-pointer
+            bg-tnc-bg2 border border-tnc-border2 text-tnc-text2
+            rounded-[2px] px-[7px] py-[2px] pr-[20px]
+            appearance-none
+            focus:outline-none focus:border-tnc-accent focus:text-tnc-accent
+            hover:border-tnc-accent hover:text-tnc-accent
+            transition-all duration-150
+          "
+          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%236b7280'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center' }}
+        >
           {FILTERS.map(f => (
-            <button
-              key={f.key}
-              onClick={() => setFilter(f.key)}
-              className={`
-                font-mono text-[9px] px-[9px] py-[2px] rounded-[2px] border cursor-pointer
-                transition-all duration-150 tracking-[0.3px]
-                ${currentFilter === f.key
-                  ? 'bg-tnc-accent/10 border-tnc-accent/30 text-tnc-accent'
-                  : 'border-tnc-border2 bg-transparent text-tnc-text2 hover:border-tnc-accent hover:text-tnc-accent'
-                }
-              `}
-            >
-              {f.label}
-            </button>
+            <option key={f.key} value={f.key}>{f.label}</option>
           ))}
-        </div>
+        </select>
       </div>
 
       {/* Scrollable feed */}

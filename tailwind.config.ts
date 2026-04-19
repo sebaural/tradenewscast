@@ -31,7 +31,7 @@ const config: Config = {
         sans: ['IBM Plex Sans', 'sans-serif'],
       },
       animation: {
-        ticker:  'ticker 70s linear infinite',
+        ticker:  'ticker 50s linear infinite',
         'pulse-dot': 'pulseDot 1.4s ease-in-out infinite',
         blink:   'blink 1s step-end infinite',
         freshin: 'freshin 0.4s ease forwards',
