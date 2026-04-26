@@ -11,7 +11,6 @@ import React, {
 import { enrichItem, isDuplicate, parseLiveSquawk } from '@/lib/enrichment';
 import { prepSpeech } from '@/lib/speechPrep';
 import { playBeep } from '@/lib/audioUtils';
-import { seedData } from '@/lib/seedData';
 import type {
   AppState,
   EnrichedItem,
@@ -412,42 +411,30 @@ export function TradeNewsCastProvider({ children }: { children: React.ReactNode 
 
     parseErrorsRef.current++;
     if (parseErrorsRef.current > 3) {
-      setParseStatus('error', 'FEED ERROR — demo data');
+      setParseStatus('error', 'FEED ERROR — retry later');
     } else {
       setParseStatus('parsing', 'RETRYING…');
     }
   }, [processItems, setParseStatus]);
 
-  // ── Seed data + polling bootstrap ─────────────────────────────────────────
+  // ── Live feed polling bootstrap ───────────────────────────────────────────
   useEffect(() => {
-    const now = Date.now();
-    const seeded = seedData.map((raw, i) => {
-      const enriched = enrichItem(raw, watchlistRef.current);
-      enriched._id  = `seed${i}`;
-      enriched._ts  = now - i * 60_000;
-      enriched._new = false;
-      seenHashRef.current.add(`${raw.time}|${raw.headline.slice(0, 50)}`);
-      return enriched;
-    });
-    setAllItems(seeded);
-
-    // Queue top-priority seed items
-    const toQueue = seeded.filter(i => i.priority <= 2).slice(0, 5).reverse();
-    setReadQueue(toQueue);
-    showNotif('VOICE READER ACTIVE', 'Reading priority 1 and 2 headlines');
+    // Reset mutable refs on each mount so React Strict Mode's double-invocation
+    // doesn't cause live feed hashes to be seen as "already processed" on the
+    // second mount, leaving the UI stuck showing only seed data.
+    seenHashRef.current    = new Set();
+    parseErrorsRef.current = 0;
+    setAllItems([]);
+    setReadQueue([]);
+    setHistory([]);
+    setActiveFeedItem(null);
 
     // Start polling
     fetchFeed();
     const interval = setInterval(fetchFeed, 30_000);
 
-    // Start reading after short delay
-    const startTimer = setTimeout(() => {
-      if (autoOnRef.current) triggerQueue();
-    }, 1500);
-
     return () => {
       clearInterval(interval);
-      clearTimeout(startTimer);
       if (queueTimerRef.current) clearTimeout(queueTimerRef.current);
       if (notifTimerRef.current) clearTimeout(notifTimerRef.current);
       if (muteTimerRef.current)  clearTimeout(muteTimerRef.current);

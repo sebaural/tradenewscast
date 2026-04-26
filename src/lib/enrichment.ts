@@ -169,7 +169,8 @@ export function parseLiveSquawk(html: string): RawNewsItem[] {
     if (dateRx.test(line)) { currentDate = line; i++; continue; }
 
     if (timeRx.test(line) || timeRx2.test(line)) {
-      currentTime = line.slice(0, 5);
+      // Extract HH:MM — drop seconds if present (e.g. "9:09:28" → "9:09")
+      currentTime = line.slice(0, 5).replace(/:$/, '');
       i++;
 
       const parts: string[] = [];
@@ -182,13 +183,16 @@ export function parseLiveSquawk(html: string): RawNewsItem[] {
           next.startsWith('CLICK HERE')
         ) { i++; continue; }
 
-        // Filter out lines that look like code
+        // Decode entities first so HTML artifacts (e.g. &nbsp; ending with ";")
+        // don't confuse the code-line filter below.
+        const decoded = decodeEntities(next);
+
+        // Filter out lines that look like JavaScript code
         if (
-          /\bvar\s+\w+\s*=|function\s*\(|\blet\s+|\bconst\s+|\/\*.*\*\/|^\/\/|;\s*$/.test(next) ||
-          /[\{\}\[\];:=&|<>]/.test(next.slice(-5)) // ends with code-like chars
+          /\bvar\s+\w+\s*=|function\s*\(|\blet\s+|\bconst\s+|\/\*.*\*\/|^\/\/|;\s*$/.test(decoded) ||
+          /[\{\}\[\];:=&|<>]/.test(decoded.slice(-5)) // ends with code-like chars
         ) { i++; continue; }
 
-        const decoded = decodeEntities(next);
         if (decoded.length > 5 && decoded.length < 500) parts.push(decoded);
         else if (decoded.startsWith('-') && parts.length > 0) parts.push(decoded);
 

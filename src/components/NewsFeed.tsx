@@ -20,7 +20,7 @@ const FILTERS: { key: FilterType; label: string }[] = [
 // ── NewsFeed ───────────────────────────────────────────────────────────────
 
 export const NewsFeed = memo(function NewsFeed() {
-  const { allItems, currentFilter, setFilter } = useApp();
+  const { allItems, currentFilter, parseStatus, parseStatusText, setFilter } = useApp();
   const todayLabel = useTodayLabel();
 
   const filtered = useMemo(() => {
@@ -68,7 +68,21 @@ export const NewsFeed = memo(function NewsFeed() {
           {todayLabel || '— —'}
         </div>
 
-        {filtered.length === 0 ? (
+        {allItems.length === 0 && parseStatus === 'parsing' ? (
+          <div className="px-[14px] py-10 flex flex-col items-center justify-center gap-3 text-center">
+            <span className="h-6 w-6 rounded-full border-2 border-tnc-border2 border-t-tnc-accent animate-spin" />
+            <div className="font-mono text-[10px] tracking-[1px] text-tnc-accent uppercase">
+              Loading LiveSquawk Feed
+            </div>
+            <div className="font-mono text-[9px] text-tnc-text3 tracking-[0.8px] uppercase">
+              {parseStatusText}
+            </div>
+          </div>
+        ) : allItems.length === 0 && parseStatus === 'error' ? (
+          <div className="px-[14px] py-6 font-mono text-[10px] text-tnc-red uppercase tracking-[1px]">
+            Live feed unavailable
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="px-[14px] py-4 font-mono text-[10px] text-tnc-text3">
             No items match this filter
           </div>
