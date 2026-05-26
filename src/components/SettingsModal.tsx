@@ -182,7 +182,7 @@ export const SettingsModal = memo(function SettingsModal() {
             MUTE CATEGORIES
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <RuleRow label="Mute analyst ratings"        checked={rules.mutRatings}    onChange={v => patch('mutRatings', v)} />
+            <RuleRow label="Mute analyst ratings"        checked={rules.muteRatings}   onChange={v => patch('muteRatings', v)} />
             <RuleRow label="Mute corporate dividends"    checked={rules.muteDividends} onChange={v => patch('muteDividends', v)} />
             <RuleRow label="Mute crypto news"            checked={rules.muteCrypto}    onChange={v => patch('muteCrypto', v)} />
             <RuleRow label="Mute sports &amp; entertainment" checked={rules.muteSports} onChange={v => patch('muteSports', v)} />

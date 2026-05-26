@@ -1,4 +1,5 @@
 import type { EnrichedItem, Priority, RawNewsItem, TagType } from '@/types';
+import { matchesWatchword } from '@/lib/watchlistUtils';
 
 // ─── Keyword taxonomy ─────────────────────────────────────────────────────
 
@@ -10,6 +11,13 @@ const KEYWORDS: Readonly<Record<string, string[]>> = {
   geo:     ['war','attack','military','strike','troops','ceasefire','conflict','nuclear','sanctions','nato','ukraine','russia','china.*taiwan','taiwan','hezbollah','lebanon','israel','saudi','kuwait','houthi'],
   markets: ['earnings','ipo','merger','acquisition','buyback','dividend','downgrade','upgrade','price target','shares','stock'],
 } as const;
+
+const KEYWORD_REGEXES: Readonly<Record<string, RegExp[]>> = Object.fromEntries(
+  Object.entries(KEYWORDS).map(([cat, kws]) => [
+    cat,
+    kws.map(kw => new RegExp(kw, 'i')),
+  ]),
+);
 
 const P1_TRIGGERS: RegExp[] = [
   /\b(fed|fomc|federal reserve)\b.*\b(rate|cut|hike|emergency)\b/i,
@@ -41,8 +49,8 @@ const P4_TRIGGERS: RegExp[] = [
 export function enrichItem(raw: RawNewsItem, watchlist: string[]): EnrichedItem {
   const tags: TagType[] = [];
 
-  Object.entries(KEYWORDS).forEach(([cat, kws]) => {
-    if (kws.some(kw => new RegExp(kw, 'i').test(raw.headline))) {
+  Object.entries(KEYWORD_REGEXES).forEach(([cat, regexes]) => {
+    if (regexes.some(rx => rx.test(raw.headline))) {
       tags.push(cat as TagType);
     }
   });
@@ -55,11 +63,11 @@ export function enrichItem(raw: RawNewsItem, watchlist: string[]): EnrichedItem 
   const isBreaking = priority === 1 || /\bbreaking\b/i.test(raw.headline);
   if (isBreaking && !tags.includes('break')) tags.push('break');
 
-  const watchHit = watchlist.some(w => new RegExp(w, 'i').test(raw.headline));
+  const watchHit = watchlist.some(w => matchesWatchword(raw.headline, w));
   if (watchHit && !tags.includes('watch')) tags.push('watch');
 
   // Source normalisation
-  let src = raw.src ?? 'LiveSquawk';
+  let src = raw.src ?? 'LiveFeed';
   const srcRx = /[-–—]\s*(RTRS|Reuters|BBG|Bloomberg|WSJ|FT|CNBC|CNN|Fox|NBC|AP|Sky|AFP|NYPost|WaPo|Axios|Politico|IranIntl|AlJazeera|Al Jazeera|Xinhua|Kremlin|StateDept|State Dept)\b/i;
   const m = raw.headline.match(srcRx);
   if (m) {

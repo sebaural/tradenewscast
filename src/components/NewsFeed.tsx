@@ -1,6 +1,6 @@
 'use client';
 
-import React, { memo, useMemo } from 'react';
+import React, { memo, useEffect, useMemo, useRef } from 'react';
 import { useApp } from '@/context/TradeNewsCastContext';
 import { NewsItem } from './NewsItem';
 import { useTodayLabel } from '@/hooks/useTodayLabel';
@@ -20,14 +20,39 @@ const FILTERS: { key: FilterType; label: string }[] = [
 // ── NewsFeed ───────────────────────────────────────────────────────────────
 
 export const NewsFeed = memo(function NewsFeed() {
-  const { allItems, currentFilter, parseStatus, parseStatusText, setFilter } = useApp();
+  const { allItems, currentFilter, parseStatus, parseStatusText, setFilter, activeFeedItem } = useApp();
   const todayLabel = useTodayLabel();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const stickyRef = useRef<HTMLDivElement>(null);
 
   const filtered = useMemo(() => {
     if (currentFilter === 'all')   return allItems;
     if (currentFilter === 'break') return allItems.filter(i => i.isBreaking);
     return allItems.filter(i => i.tags.includes(currentFilter));
   }, [allItems, currentFilter]);
+
+  useEffect(() => {
+    if (!activeFeedItem) return;
+    if (!filtered.some(i => i._id === activeFeedItem)) return;
+
+    const frame = requestAnimationFrame(() => {
+      const container = scrollRef.current;
+      const sticky = stickyRef.current;
+      const el = document.getElementById(`ni-${activeFeedItem}`);
+      if (!container || !sticky || !el) return;
+
+      const stickyHeight = sticky.offsetHeight;
+      const containerTop = container.getBoundingClientRect().top;
+      const elTop = el.getBoundingClientRect().top;
+      const delta = elTop - containerTop - stickyHeight;
+
+      if (Math.abs(delta) > 2) {
+        container.scrollBy({ top: delta, behavior: 'smooth' });
+      }
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [activeFeedItem, filtered]);
 
   return (
     <div className="flex flex-col overflow-hidden border-r border-tnc-border">
@@ -62,9 +87,12 @@ export const NewsFeed = memo(function NewsFeed() {
       </div>
 
       {/* Scrollable feed */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-tnc-border2">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-tnc-border2">
         {/* Today divider (sticky) */}
-        <div className="sticky top-0 z-[3] px-[14px] py-[5px] font-mono text-[9px] tracking-[2px] text-tnc-text3 bg-tnc-bg uppercase border-b border-tnc-border">
+        <div
+          ref={stickyRef}
+          className="sticky top-0 z-[3] px-[14px] py-[5px] font-mono text-[9px] tracking-[2px] text-tnc-text3 bg-tnc-bg uppercase border-b border-tnc-border"
+        >
           {todayLabel || '— —'}
         </div>
 

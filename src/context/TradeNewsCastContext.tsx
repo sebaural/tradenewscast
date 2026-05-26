@@ -5,17 +5,18 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
-import { enrichItem, isDuplicate, parseLiveSquawk } from '@/lib/enrichment';
-import { prepSpeech } from '@/lib/speechPrep';
-import { playBeep } from '@/lib/audioUtils';
+import { useFeedPolling } from '@/hooks/useFeedPolling';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useSpeechQueue } from '@/hooks/useSpeechQueue';
+import { loadPersistedSettings, normalizeRules, savePersistedSettings } from '@/lib/persistence';
 import type {
   AppState,
   EnrichedItem,
   FilterType,
-  HistoryEntry,
   InterruptPolicy,
   NotificationState,
   ReadingMode,
@@ -24,12 +25,6 @@ import type {
   VoiceSettings,
 } from '@/types';
 
-// ─── Feed endpoint (server-side fetch to avoid browser CORS issues) ───────
-
-const FEED_ENDPOINT = '/api/livesquawk';
-
-// ─── Default values ───────────────────────────────────────────────────────
-
 const DEFAULT_RULES: Rules = {
   interrupt:     true,
   dedup:         true,
@@ -37,7 +32,7 @@ const DEFAULT_RULES: Rules = {
   context:       false,
   tone:          true,
   stale:         true,
-  mutRatings:    false,
+  muteRatings:   false,
   muteDividends: true,
   muteCrypto:    false,
   muteSports:    true,
@@ -51,14 +46,11 @@ const DEFAULT_VOICE_SETTINGS: VoiceSettings = {
   selectedVoiceName: '',
 };
 
-// ─── Context interface ────────────────────────────────────────────────────
+const DEFAULT_WATCHLIST = ['OIL', 'FED', 'CPI', 'IRAN', 'HORMUZ', 'NFP', 'FOMC'];
 
 interface AppContextValue extends AppState {
-  // Feed actions
   setFilter:   (filter: FilterType) => void;
   setActiveItem: (id: string | null) => void;
-
-  // TTS actions
   toggleAuto:    () => void;
   togglePause:   () => void;
   stopAll:       () => void;
@@ -69,29 +61,19 @@ interface AppContextValue extends AppState {
   unmute:        () => void;
   setReadingMode: (mode: ReadingMode) => void;
   setVoiceSettings: (patch: Partial<VoiceSettings>) => void;
-
-  // Rules & config
   setRules:          (patch: Partial<Rules>) => void;
   setInterruptPolicy: (policy: InterruptPolicy) => void;
   setProfile:         (profile: TraderProfile) => void;
-
-  // Watchlist
   addWatchword:    (word: string) => void;
   removeWatchword: (word: string) => void;
-
-  // History / queue
   clearQueue:   () => void;
   clearHistory: () => void;
-
-  // Modal
   openSettings:  () => void;
   closeSettings: () => void;
-
-  // Notification
   showNotif: (head: string, body: string, isP1?: boolean) => void;
+  mobileSidebarOpen: boolean;
+  setMobileSidebarOpen: (open: boolean) => void;
 }
-
-// ─── Create context ───────────────────────────────────────────────────────
 
 const AppContext = createContext<AppContextValue | null>(null);
 
@@ -101,68 +83,50 @@ export function useApp(): AppContextValue {
   return ctx;
 }
 
-// ─── Provider ─────────────────────────────────────────────────────────────
-
 export function TradeNewsCastProvider({ children }: { children: React.ReactNode }) {
-  // ── State ────────────────────────────────────────────────────────────────
-  const [allItems,        setAllItems]        = useState<EnrichedItem[]>([]);
-  const [readQueue,       setReadQueue]        = useState<EnrichedItem[]>([]);
-  const [history,         setHistory]          = useState<HistoryEntry[]>([]);
-  const [watchlist,       setWatchlist]        = useState<string[]>(['OIL','FED','CPI','IRAN','HORMUZ','NFP','FOMC']);
-  const [rules,           setRulesState]       = useState<Rules>(DEFAULT_RULES);
-  const [currentFilter,   setCurrentFilter]    = useState<FilterType>('all');
-  const [autoOn,          setAutoOn]           = useState(true);
-  const [isPlaying,       setIsPlaying]        = useState(false);
-  const [isPaused,        setIsPaused]         = useState(false);
-  const [muteUntil,       setMuteUntil]        = useState(0);
+  const [allItems, setAllItems] = useState<EnrichedItem[]>([]);
+  const [watchlist, setWatchlist] = useState<string[]>(DEFAULT_WATCHLIST);
+  const [rules, setRulesState] = useState<Rules>(DEFAULT_RULES);
+  const [currentFilter, setCurrentFilter] = useState<FilterType>('all');
+  const [autoOn, setAutoOn] = useState(true);
+  const [muteUntil, setMuteUntil] = useState(0);
   const [interruptPolicy, setInterruptPolicyState] = useState<InterruptPolicy>('critical');
-  const [readCount,       setReadCount]        = useState(0);
-  const [lastSpokenId,    setLastSpokenId]     = useState<string | null>(null);
-  const [parseStatus,     setParseStatusState] = useState<AppState['parseStatus']>('parsing');
-  const [parseStatusText, setParseStatusText]  = useState('CONNECTING…');
-  const [readingMode,     setReadingModeState] = useState<ReadingMode>('summary');
-  const [voiceSettings,   setVoiceSettingsState] = useState<VoiceSettings>(DEFAULT_VOICE_SETTINGS);
-  const [voices,          setVoices]           = useState<SpeechSynthesisVoice[]>([]);
-  const [notification,    setNotification]     = useState<NotificationState>({ head: '', body: '', isP1: false, visible: false });
-  const [isSettingsOpen,  setIsSettingsOpen]   = useState(false);
-  const [activeFeedItem,  setActiveFeedItem]   = useState<string | null>(null);
+  const [parseStatus, setParseStatusState] = useState<AppState['parseStatus']>('parsing');
+  const [parseStatusText, setParseStatusText] = useState('CONNECTING…');
+  const [readingMode, setReadingModeState] = useState<ReadingMode>('summary');
+  const [voiceSettings, setVoiceSettingsState] = useState<VoiceSettings>(DEFAULT_VOICE_SETTINGS);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [notification, setNotification] = useState<NotificationState>({
+    head: '', body: '', isP1: false, visible: false,
+  });
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
 
-  // ── Refs (mutable internals that don't drive renders) ────────────────────
-  const proxyIndexRef  = useRef(0);
   const parseErrorsRef = useRef(0);
-  const seenHashRef    = useRef<Set<string>>(new Set());
-  const notifTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const muteTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const queueTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isPlayingRef   = useRef(false);
-  const autoOnRef      = useRef(true);
-  const muteUntilRef   = useRef(0);
-  const readQueueRef   = useRef<EnrichedItem[]>([]);
-  const allItemsRef    = useRef<EnrichedItem[]>([]);
-  const isPausedRef    = useRef(false);
-  const voiceSettingsRef = useRef<VoiceSettings>(DEFAULT_VOICE_SETTINGS);
-  const readingModeRef   = useRef<ReadingMode>('summary');
-  const rulesRef         = useRef<Rules>(DEFAULT_RULES);
-  const watchlistRef     = useRef<string[]>(['OIL','FED','CPI','IRAN','HORMUZ','NFP','FOMC']);
-  const lastSpokenRef    = useRef<EnrichedItem | null>(null);
-  const interruptPolicyRef = useRef<InterruptPolicy>('critical');
-  const userActivatedRef   = useRef(false);
-  const activationHintRef  = useRef(false);
+  const seenHashRef = useRef<Set<string>>(new Set());
+  const notifTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const muteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoOnRef = useRef(true);
+  const muteUntilRef = useRef(0);
+  const allItemsRef = useRef<EnrichedItem[]>([]);
+  const voiceSettingsRef = useRef<VoiceSettings>(voiceSettings);
+  const readingModeRef = useRef<ReadingMode>(readingMode);
+  const rulesRef = useRef<Rules>(rules);
+  const watchlistRef = useRef<string[]>(watchlist);
+  const interruptPolicyRef = useRef<InterruptPolicy>(interruptPolicy);
+  const userActivatedRef = useRef(false);
+  const activationHintRef = useRef(false);
 
-  // Keep refs in sync with state
-  isPlayingRef.current    = isPlaying;
-  autoOnRef.current       = autoOn;
-  muteUntilRef.current    = muteUntil;
-  readQueueRef.current    = readQueue;
-  allItemsRef.current     = allItems;
-  isPausedRef.current     = isPaused;
-  voiceSettingsRef.current  = voiceSettings;
-  readingModeRef.current    = readingMode;
-  rulesRef.current          = rules;
-  watchlistRef.current      = watchlist;
+  autoOnRef.current = autoOn;
+  muteUntilRef.current = muteUntil;
+  allItemsRef.current = allItems;
+  voiceSettingsRef.current = voiceSettings;
+  readingModeRef.current = readingMode;
+  rulesRef.current = rules;
+  watchlistRef.current = watchlist;
   interruptPolicyRef.current = interruptPolicy;
 
-  // ── Notifications ─────────────────────────────────────────────────────────
   const showNotif = useCallback((head: string, body: string, isP1 = false) => {
     setNotification({ head, body, isP1, visible: true });
     if (notifTimerRef.current) clearTimeout(notifTimerRef.current);
@@ -171,7 +135,32 @@ export function TradeNewsCastProvider({ children }: { children: React.ReactNode 
     }, 4000);
   }, []);
 
-  // ── TTS voice loading ─────────────────────────────────────────────────────
+  const speech = useSpeechQueue({
+    showNotif,
+    userActivatedRef,
+    autoOnRef,
+    muteUntilRef,
+    rulesRef,
+    readingModeRef,
+    voiceSettingsRef,
+    interruptPolicyRef,
+  });
+
+  const setParseStatus = useCallback((status: AppState['parseStatus'], text: string) => {
+    setParseStatusState(status);
+    setParseStatusText(text);
+  }, []);
+
+  useFeedPolling({
+    setAllItems,
+    setParseStatus,
+    scheduleItem: speech.scheduleItem,
+    watchlistRef,
+    rulesRef,
+    seenHashRef,
+    parseErrorsRef,
+  });
+
   const loadVoices = useCallback(() => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
     const all = window.speechSynthesis.getVoices();
@@ -182,9 +171,9 @@ export function TradeNewsCastProvider({ children }: { children: React.ReactNode 
     const gbEnglish = all.filter(v => normalizeLang(v.lang).startsWith('en-gb'));
 
     const preferred = [
-      'Google UK English Male','Google UK English Female','Google US English',
-      'Microsoft David','Microsoft Zira','Microsoft Mark',
-      'Alex','Samantha','Daniel','Karen','Moira','Fiona',
+      'Google UK English Male', 'Google UK English Female', 'Google US English',
+      'Microsoft David', 'Microsoft Zira', 'Microsoft Mark',
+      'Alex', 'Samantha', 'Daniel', 'Karen', 'Moira', 'Fiona',
     ];
 
     const byPreference = (a: SpeechSynthesisVoice, b: SpeechSynthesisVoice) => {
@@ -193,15 +182,12 @@ export function TradeNewsCastProvider({ children }: { children: React.ReactNode 
       return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
     };
 
-    const pickTop = (voices: SpeechSynthesisVoice[]) => {
-      if (voices.length === 0) return null;
-      return [...voices].sort(byPreference)[0];
+    const pickTop = (voiceList: SpeechSynthesisVoice[]) => {
+      if (voiceList.length === 0) return null;
+      return [...voiceList].sort(byPreference)[0];
     };
 
-    const usTop = pickTop(usEnglish);
-    const gbTop = pickTop(gbEnglish);
-    const restricted = [usTop, gbTop].filter(Boolean) as SpeechSynthesisVoice[];
-
+    const restricted = [pickTop(usEnglish), pickTop(gbEnglish)].filter(Boolean) as SpeechSynthesisVoice[];
     setVoices(restricted);
     setVoiceSettingsState(prev => {
       const hasSelected = restricted.some(v => v.name === prev.selectedVoiceName);
@@ -223,227 +209,64 @@ export function TradeNewsCastProvider({ children }: { children: React.ReactNode 
     };
   }, [loadVoices]);
 
-  // ── Core speak() ─────────────────────────────────────────────────────────
-  const speak = useCallback((text: string, onEnd: () => void) => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-      onEnd();
+  useEffect(() => {
+    const saved = loadPersistedSettings();
+    if (!saved) {
+      setHydrated(true);
       return;
     }
-    window.speechSynthesis.cancel();
-    const utt    = new SpeechSynthesisUtterance(text);
-    const vs     = voiceSettingsRef.current;
-    utt.rate     = vs.rate;
-    utt.pitch    = vs.pitch;
-    utt.volume   = vs.volume;
-    const voice  = window.speechSynthesis.getVoices().find(v => v.name === vs.selectedVoiceName);
-    if (voice) utt.voice = voice;
-    utt.onstart  = () => { isPlayingRef.current = true;  setIsPlaying(true); };
-    utt.onend    = () => { isPlayingRef.current = false; setIsPlaying(false); onEnd(); };
-    utt.onerror  = () => { isPlayingRef.current = false; setIsPlaying(false); onEnd(); };
-    window.speechSynthesis.speak(utt);
+    if (saved.rules) setRulesState(prev => ({ ...prev, ...normalizeRules(saved.rules!) }));
+    if (saved.watchlist) setWatchlist(saved.watchlist);
+    if (saved.readingMode) setReadingModeState(saved.readingMode);
+    if (saved.interruptPolicy) setInterruptPolicyState(saved.interruptPolicy);
+    if (saved.voiceSettings) {
+      setVoiceSettingsState(prev => ({ ...prev, ...saved.voiceSettings }));
+    }
+    setHydrated(true);
   }, []);
 
-  // ── readItem() ───────────────────────────────────────────────────────────
-  const readItem = useCallback((item: EnrichedItem) => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-    const text = prepSpeech(item, readingModeRef.current, rulesRef.current);
-
-    if (item.priority === 1 && rulesRef.current.tone) {
-      playBeep(1200, 0.08, 0.25);
-      setTimeout(() => playBeep(900, 0.08, 0.2), 100);
-    }
-
-    setLastSpokenId(item._id);
-    lastSpokenRef.current = item;
-    setActiveFeedItem(item._id);
-
-    speak(text, () => {
-      setActiveFeedItem(null);
-      setReadCount(c => c + 1);
-      const entry: HistoryEntry = {
-        item,
-        readAt: new Date().toTimeString().slice(0, 8),
-      };
-      setHistory(prev => [entry, ...prev].slice(0, 50));
-      setReadQueue(prev => prev.filter(i => i._id !== item._id));
-
-      const gap = voiceSettingsRef.current.gap * 1000;
-      queueTimerRef.current = setTimeout(() => {
-        if (autoOnRef.current && !isPausedRef.current) {
-          triggerQueue();
-        }
-      }, gap);
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [speak]);
-
-  // ── triggerQueue() ───────────────────────────────────────────────────────
-  const triggerQueue = useCallback(() => {
-    if (
-      isPlayingRef.current ||
-      isPausedRef.current  ||
-      !autoOnRef.current   ||
-      Date.now() < muteUntilRef.current ||
-      !userActivatedRef.current
-    ) return;
-    const q = readQueueRef.current;
-    if (q.length === 0) return;
-    if (queueTimerRef.current) clearTimeout(queueTimerRef.current);
-    queueTimerRef.current = setTimeout(() => {
-      const next = readQueueRef.current[0];
-      if (!next || isPlayingRef.current) return;
-      setReadQueue(prev => prev.slice(1));
-      readItem(next);
-    }, 300);
-  }, [readItem]);
-
-  // ── scheduleItem() ───────────────────────────────────────────────────────
-  const scheduleItem = useCallback((item: EnrichedItem) => {
-    const r = rulesRef.current;
-    if (!autoOnRef.current) return;
-    if (Date.now() < muteUntilRef.current) return;
-    if (r.skipP4 && item.priority === 4) return;
-    if (r.muteDividends && /dividend/i.test(item.headline)) return;
-    if (r.muteCrypto && /crypto|bitcoin|ethereum|defi|token/i.test(item.headline)) return;
-    if (r.muteSports && /nfl|nba|fifa|formula 1|olympics/i.test(item.headline)) return;
-    const mode = readingModeRef.current;
-    if (mode === 'breaking'   && !item.isBreaking) return;
-    if (mode === 'watchlist'  && !item.watchHit)   return;
-
-    if (isPlayingRef.current && item.priority === 1) {
-      const policy = interruptPolicyRef.current;
-      if (policy === 'always' || policy === 'critical') {
-        window.speechSynthesis?.cancel();
-        isPlayingRef.current = false;
-        setIsPlaying(false);
-        readItem(item);
-        return;
-      }
-    }
-
-    setReadQueue(prev => {
-      let next = item.priority === 1 ? [item, ...prev] : [...prev, item];
-      if (r.stale) {
-        const now = Date.now();
-        next = next.filter(i => now - i._ts < 10 * 60 * 1000);
-      }
-      if (next.length > 20) next = next.slice(0, 20);
-      return next;
-    });
-
-    if (!isPlayingRef.current) {
-      setTimeout(() => triggerQueue(), 100);
-    }
-  }, [readItem, triggerQueue]);
-
-  // ── Feed processing ───────────────────────────────────────────────────────
-  const processItems = useCallback((rawItems: ReturnType<typeof parseLiveSquawk>) => {
-    let newCount = 0;
-    const now = Date.now();
-
-    setAllItems(prev => {
-      const updated = [...prev];
-      for (const raw of rawItems) {
-        const hash = `${raw.time}|${raw.headline.slice(0, 50)}`;
-        if (seenHashRef.current.has(hash)) continue;
-        seenHashRef.current.add(hash);
-
-        const enriched = enrichItem(raw, watchlistRef.current);
-        enriched._ts = now - newCount * 1000; // slight ordering offset
-        enriched._new = true;
-
-        if (rulesRef.current.dedup && isDuplicate(enriched, updated)) {
-          enriched._dup = true;
-        } else {
-          scheduleItem(enriched);
-        }
-
-        updated.unshift(enriched);
-        newCount++;
-      }
-      // Clear _new flag on old items
-      return updated.map((item, idx) => idx >= newCount ? { ...item, _new: false } : item);
-    });
-  }, [scheduleItem]);
-
-  // ── User activation gate for speech synthesis ─────────────────────────────
   useEffect(() => {
-    const markActivated = () => {
-      if (userActivatedRef.current) return;
-      userActivatedRef.current = true;
-      activationHintRef.current = false;
-      if (autoOnRef.current) setTimeout(() => triggerQueue(), 0);
-    };
+    if (!hydrated) return;
+    savePersistedSettings({
+      rules,
+      voiceSettings,
+      watchlist,
+      readingMode,
+      interruptPolicy,
+    });
+  }, [hydrated, rules, voiceSettings, watchlist, readingMode, interruptPolicy]);
 
-    const options: AddEventListenerOptions = { passive: true };
-    window.addEventListener('pointerdown', markActivated, options);
-    window.addEventListener('keydown', markActivated, options);
-
-    return () => {
-      window.removeEventListener('pointerdown', markActivated);
-      window.removeEventListener('keydown', markActivated);
-    };
-  }, [triggerQueue]);
-
-  // ── Live feed polling ─────────────────────────────────────────────────────
-  const setParseStatus = useCallback((status: AppState['parseStatus'], text: string) => {
-    setParseStatusState(status);
-    setParseStatusText(text);
-  }, []);
-
-  const fetchFeed = useCallback(async () => {
-    setParseStatus('parsing', 'FETCHING…');
-    try {
-      const res = await fetch(FEED_ENDPOINT, { signal: AbortSignal.timeout(10_000) });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const html  = await res.text();
-      const items = parseLiveSquawk(html);
-
-      if (items.length > 0) {
-        parseErrorsRef.current = 0;
-        processItems(items);
-        setParseStatus('live', 'LIVE · LiveSquawk');
-        return;
-      }
-    } catch {
-      // handled below
-    }
-
-    parseErrorsRef.current++;
-    if (parseErrorsRef.current > 3) {
-      setParseStatus('error', 'FEED ERROR — retry later');
-    } else {
-      setParseStatus('parsing', 'RETRYING…');
-    }
-  }, [processItems, setParseStatus]);
-
-  // ── Live feed polling bootstrap ───────────────────────────────────────────
   useEffect(() => {
-    // Reset mutable refs on each mount so React Strict Mode's double-invocation
-    // doesn't cause live feed hashes to be seen as "already processed" on the
-    // second mount, leaving the UI stuck showing only seed data.
-    seenHashRef.current    = new Set();
+    seenHashRef.current = new Set();
     parseErrorsRef.current = 0;
     setAllItems([]);
-    setReadQueue([]);
-    setHistory([]);
-    setActiveFeedItem(null);
-
-    // Start polling
-    fetchFeed();
-    const interval = setInterval(fetchFeed, 30_000);
-
+    speech.setReadQueue([]);
+    speech.clearHistory();
     return () => {
-      clearInterval(interval);
-      if (queueTimerRef.current) clearTimeout(queueTimerRef.current);
+      if (speech.queueTimerRef.current) clearTimeout(speech.queueTimerRef.current);
       if (notifTimerRef.current) clearTimeout(notifTimerRef.current);
-      if (muteTimerRef.current)  clearTimeout(muteTimerRef.current);
+      if (muteTimerRef.current) clearTimeout(muteTimerRef.current);
       window.speechSynthesis?.cancel();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Media Session (background playback) ──────────────────────────────────
+  useEffect(() => {
+    const markActivated = () => {
+      if (userActivatedRef.current) return;
+      userActivatedRef.current = true;
+      activationHintRef.current = false;
+      if (autoOnRef.current) setTimeout(() => speech.triggerQueue(), 0);
+    };
+    const options: AddEventListenerOptions = { passive: true };
+    window.addEventListener('pointerdown', markActivated, options);
+    window.addEventListener('keydown', markActivated, options);
+    return () => {
+      window.removeEventListener('pointerdown', markActivated);
+      window.removeEventListener('keydown', markActivated);
+    };
+  }, [speech.triggerQueue]);
+
   useEffect(() => {
     if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return;
     try {
@@ -454,22 +277,6 @@ export function TradeNewsCastProvider({ children }: { children: React.ReactNode 
       });
     } catch { /* unsupported */ }
   }, []);
-
-  // ── Keyboard shortcuts ────────────────────────────────────────────────────
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement).tagName === 'INPUT') return;
-      if (e.code === 'Space')      { e.preventDefault(); togglePause(); }
-      if (e.code === 'ArrowRight') skipCurrent();
-      if (e.code === 'ArrowLeft')  replayLast();
-      if (e.code === 'KeyM')       muteMins(5);
-    };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // ── Public action handlers ────────────────────────────────────────────────
 
   const toggleAuto = useCallback(() => {
     const next = !autoOnRef.current;
@@ -483,55 +290,11 @@ export function TradeNewsCastProvider({ children }: { children: React.ReactNode 
       } else {
         showNotif('AUTO READ ON', 'Reading news in real time');
       }
-      setTimeout(triggerQueue, 100);
+      setTimeout(speech.triggerQueue, 100);
     } else {
       window.speechSynthesis?.cancel();
-      setIsPlaying(false);
     }
-  }, [showNotif, triggerQueue]);
-
-  const togglePause = useCallback(() => {
-    if (!('speechSynthesis' in window)) return;
-    if (window.speechSynthesis.paused) {
-      window.speechSynthesis.resume();
-      setIsPaused(false);
-    } else {
-      window.speechSynthesis.pause();
-      setIsPaused(true);
-    }
-  }, []);
-
-  const stopAll = useCallback(() => {
-    window.speechSynthesis?.cancel();
-    setIsPlaying(false);
-    setIsPaused(false);
-    setReadQueue([]);
-    setActiveFeedItem(null);
-    if (queueTimerRef.current) clearTimeout(queueTimerRef.current);
-  }, []);
-
-  const skipCurrent = useCallback(() => {
-    window.speechSynthesis?.cancel();
-    setIsPlaying(false);
-    const gap = voiceSettingsRef.current.gap * 1000 * 0.3;
-    setTimeout(() => { if (autoOnRef.current) triggerQueue(); }, gap);
-  }, [triggerQueue]);
-
-  const replayLast = useCallback(() => {
-    if (lastSpokenRef.current) {
-      window.speechSynthesis?.cancel();
-      setIsPlaying(false);
-      readItem(lastSpokenRef.current);
-    }
-  }, [readItem]);
-
-  const readSingle = useCallback((id: string) => {
-    const item = allItemsRef.current.find(i => i._id === id);
-    if (!item) return;
-    window.speechSynthesis?.cancel();
-    setIsPlaying(false);
-    readItem(item);
-  }, [readItem]);
+  }, [showNotif, speech]);
 
   const muteMins = useCallback((mins: number) => {
     const until = Date.now() + mins * 60_000;
@@ -544,17 +307,24 @@ export function TradeNewsCastProvider({ children }: { children: React.ReactNode 
       showNotif('UNMUTED', 'Voice reader resumed');
       muteUntilRef.current = 0;
       setMuteUntil(0);
-      if (autoOnRef.current) triggerQueue();
+      if (autoOnRef.current) speech.triggerQueue();
     }, mins * 60_000);
-  }, [showNotif, triggerQueue]);
+  }, [showNotif, speech]);
 
   const unmute = useCallback(() => {
     if (muteTimerRef.current) clearTimeout(muteTimerRef.current);
     setMuteUntil(0);
     muteUntilRef.current = 0;
     showNotif('UNMUTED', 'Voice reader active');
-    if (autoOnRef.current) triggerQueue();
-  }, [showNotif, triggerQueue]);
+    if (autoOnRef.current) speech.triggerQueue();
+  }, [showNotif, speech]);
+
+  useKeyboardShortcuts({
+    togglePause: speech.togglePause,
+    skipCurrent: speech.skipCurrent,
+    replayLast: speech.replayLast,
+    muteMins,
+  });
 
   const setFilter = useCallback((filter: FilterType) => setCurrentFilter(filter), []);
 
@@ -626,27 +396,67 @@ export function TradeNewsCastProvider({ children }: { children: React.ReactNode 
     });
   }, []);
 
-  const clearQueue   = useCallback(() => setReadQueue([]), []);
-  const clearHistory = useCallback(() => setHistory([]),  []);
-  const openSettings  = useCallback(() => setIsSettingsOpen(true),  []);
-  const closeSettings = useCallback(() => setIsSettingsOpen(false), []);
-  const setActiveItem = useCallback((id: string | null) => setActiveFeedItem(id), []);
+  const readSingle = useCallback((id: string) => {
+    speech.readSingle(id, allItemsRef.current);
+  }, [speech]);
 
-  // ── Context value ─────────────────────────────────────────────────────────
-  const value: AppContextValue = {
-    allItems, readQueue, history, watchlist, rules, currentFilter,
-    autoOn, isPlaying, isPaused, muteUntil, interruptPolicy,
-    readCount, lastSpokenId, parseStatus, parseStatusText, readingMode,
-    voiceSettings, voices, notification, isSettingsOpen, activeFeedItem,
-    setFilter, setActiveItem,
-    toggleAuto, togglePause, stopAll, skipCurrent, replayLast, readSingle,
-    muteMins, unmute, setReadingMode, setVoiceSettings,
-    setRules, setInterruptPolicy, setProfile,
-    addWatchword, removeWatchword,
-    clearQueue, clearHistory,
-    openSettings, closeSettings,
+  const openSettings = useCallback(() => setIsSettingsOpen(true), []);
+  const closeSettings = useCallback(() => setIsSettingsOpen(false), []);
+
+  const value = useMemo<AppContextValue>(() => ({
+    allItems,
+    readQueue: speech.readQueue,
+    history: speech.history,
+    watchlist,
+    rules,
+    currentFilter,
+    autoOn,
+    isPlaying: speech.isPlaying,
+    isPaused: speech.isPaused,
+    muteUntil,
+    interruptPolicy,
+    readCount: speech.readCount,
+    lastSpokenId: speech.lastSpokenId,
+    parseStatus,
+    parseStatusText,
+    readingMode,
+    voiceSettings,
+    voices,
+    notification,
+    isSettingsOpen,
+    activeFeedItem: speech.activeFeedItem,
+    mobileSidebarOpen,
+    setMobileSidebarOpen,
+    setFilter,
+    setActiveItem: speech.setActiveItem,
+    toggleAuto,
+    togglePause: speech.togglePause,
+    stopAll: speech.stopAll,
+    skipCurrent: speech.skipCurrent,
+    replayLast: speech.replayLast,
+    readSingle,
+    muteMins,
+    unmute,
+    setReadingMode,
+    setVoiceSettings,
+    setRules,
+    setInterruptPolicy,
+    setProfile,
+    addWatchword,
+    removeWatchword,
+    clearQueue: speech.clearQueue,
+    clearHistory: speech.clearHistory,
+    openSettings,
+    closeSettings,
     showNotif,
-  };
+  }), [
+    allItems, speech, watchlist, rules, currentFilter, autoOn, muteUntil,
+    interruptPolicy, parseStatus, parseStatusText, readingMode, voiceSettings,
+    voices, notification, isSettingsOpen, mobileSidebarOpen,
+    setFilter, toggleAuto, readSingle, muteMins, unmute, setReadingMode,
+    setVoiceSettings, setRules, setInterruptPolicy, setProfile,
+    addWatchword, removeWatchword, openSettings, closeSettings, showNotif,
+  ]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

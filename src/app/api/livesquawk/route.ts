@@ -1,11 +1,22 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { isRateLimited, isSameOrigin, pruneRateLimitBuckets } from '@/lib/rateLimit';
 
 const LIVE_SQUAWK_URL =
+  process.env.LIVE_SQUAWK_URL ??
   'https://www.livesquawk.com/partner_messenger/embedded_content.php?partner_name=Infront2&';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!isSameOrigin(request)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  pruneRateLimitBuckets();
+  if (isRateLimited(request)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+  }
+
   try {
     const res = await fetch(LIVE_SQUAWK_URL, {
       method: 'GET',

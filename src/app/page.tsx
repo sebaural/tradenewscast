@@ -6,6 +6,7 @@ import { TradeNewsCastProvider } from '@/context/TradeNewsCastContext';
 import { TickerBar }       from '@/components/TickerBar';
 import { AppHeader }       from '@/components/AppHeader';
 import { VoiceControlBar } from '@/components/VoiceControlBar';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { unlockAudio }     from '@/lib/audioUtils';
 
 // Code-split heavy components loaded client-side
@@ -34,7 +35,8 @@ export default function Page() {
   }, []);
 
   return (
-    <TradeNewsCastProvider>
+    <ErrorBoundary>
+      <TradeNewsCastProvider>
       {/* Scrolling market ticker */}
       <TickerBar />
 
@@ -53,6 +55,7 @@ export default function Page() {
       {/* Overlays */}
       <SettingsModal />
       <NotificationToast />
-    </TradeNewsCastProvider>
+      </TradeNewsCastProvider>
+    </ErrorBoundary>
   );
 }

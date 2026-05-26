@@ -74,7 +74,7 @@ export interface Rules {
   context:        boolean;
   tone:           boolean;
   stale:          boolean;
-  mutRatings:     boolean;
+  muteRatings:    boolean;
   muteDividends:  boolean;
   muteCrypto:     boolean;
   muteSports:     boolean;

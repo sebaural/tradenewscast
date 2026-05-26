@@ -12,8 +12,9 @@ const dirClass: Record<string, string> = {
 export const MarketGrid = memo(function MarketGrid() {
   return (
     <div className="border-b border-tnc-border">
-      <div className="px-3 py-[7px] font-mono text-[9px] font-semibold tracking-[2px] uppercase text-tnc-muted bg-tnc-bg border-b border-tnc-border">
-        MARKETS
+      <div className="px-3 py-[7px] font-mono text-[9px] font-semibold tracking-[2px] uppercase text-tnc-muted bg-tnc-bg border-b border-tnc-border flex justify-between items-center">
+        <span>MARKETS</span>
+        <span className="text-[8px] text-tnc-text3 tracking-[1px] font-normal normal-case">sample data</span>
       </div>
       <div className="grid grid-cols-2">
         {MARKET_QUOTES.map(q => (

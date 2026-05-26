@@ -16,7 +16,7 @@ export const ActiveRules = memo(function ActiveRules() {
   if (rules.muteDividends) on.push('Mute dividends');
   if (rules.muteSports)    on.push('Mute sports');
   if (rules.muteCrypto)    on.push('Mute crypto');
-  if (rules.mutRatings)    on.push('Mute ratings');
+  if (rules.muteRatings)   on.push('Mute ratings');
 
   return (
     <div className="flex-1 overflow-hidden flex flex-col border-b border-tnc-border">

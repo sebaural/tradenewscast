@@ -9,17 +9,20 @@ const Sep = () => (
 );
 
 const Btn = memo(function Btn({
-  onClick, className = '', children, title,
+  onClick, className = '', children, title, ariaLabel,
 }: {
   onClick: () => void;
   className?: string;
   children: React.ReactNode;
   title?: string;
+  ariaLabel?: string;
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       title={title}
+      aria-label={ariaLabel ?? title}
       className={
         `font-mono text-[10px] font-medium tracking-[0.5px] px-3 h-7
          rounded-[3px] border border-tnc-border2 bg-transparent text-tnc-text
@@ -35,20 +38,21 @@ const Btn = memo(function Btn({
 export const VoiceControlBar = memo(function VoiceControlBar() {
   const {
     autoOn, isPlaying, isPaused,
-    activeFeedItem,
+    activeFeedItem, allItems,
     toggleAuto, togglePause, stopAll, replayLast, skipCurrent,
-    openSettings,
+    openSettings, setMobileSidebarOpen,
   } = useApp();
 
-  const nowReadingItem = useApp().allItems.find(i => i._id === activeFeedItem);
+  const nowReadingItem = allItems.find(i => i._id === activeFeedItem);
   const nowReadingText = nowReadingItem
     ? nowReadingItem.headline.slice(0, 65) + '…'
     : '—';
 
   return (
     <div className="bg-tnc-bg3 border-b border-tnc-border px-4 py-[6px] flex items-center gap-[10px] flex-wrap flex-shrink-0 min-h-[44px]">
-      {/* Auto read toggle */}
       <button
+        type="button"
+        aria-label={autoOn ? 'Turn auto read off' : 'Turn auto read on'}
         onClick={toggleAuto}
         className={`
           font-mono text-[10px] font-medium tracking-[0.5px] px-3 h-7
@@ -62,9 +66,10 @@ export const VoiceControlBar = memo(function VoiceControlBar() {
         {autoOn ? '▶ AUTO READ' : '⏹ AUTO OFF'}
       </button>
 
-      {/* Pause — only when auto is on */}
       {autoOn && (
         <button
+          type="button"
+          aria-label={isPaused ? 'Resume reading' : 'Pause reading'}
           onClick={togglePause}
           className="font-mono text-[10px] font-medium tracking-[0.5px] px-3 h-7 rounded-[3px] border border-tnc-border2 bg-transparent text-tnc-text cursor-pointer hover:border-tnc-accent hover:text-tnc-accent transition-all duration-150 whitespace-nowrap"
         >
@@ -72,9 +77,10 @@ export const VoiceControlBar = memo(function VoiceControlBar() {
         </button>
       )}
 
-      {/* Stop — only when playing */}
       {isPlaying && (
         <button
+          type="button"
+          aria-label="Stop reading and clear queue"
           onClick={stopAll}
           className="font-mono text-[10px] font-medium tracking-[0.5px] px-3 h-7 rounded-[3px] border border-tnc-red text-tnc-red bg-transparent cursor-pointer hover:bg-tnc-red hover:text-white transition-all duration-150 whitespace-nowrap"
         >
@@ -82,13 +88,12 @@ export const VoiceControlBar = memo(function VoiceControlBar() {
         </button>
       )}
 
-      <Btn onClick={replayLast} title="Replay last">↩ REPLAY</Btn>
-      <Btn onClick={skipCurrent} title="Skip current">⏭ SKIP</Btn>
+      <Btn onClick={replayLast} title="Replay last (Left arrow)" ariaLabel="Replay last item">↩ REPLAY</Btn>
+      <Btn onClick={skipCurrent} title="Skip current (Right arrow)" ariaLabel="Skip current item">⏭ SKIP</Btn>
 
-      {/* <Sep />
+      <Sep />
 
-      Now reading
-      <div className="flex items-center gap-2 flex-1 min-w-0 max-w-[360px]">
+      <div className="hidden sm:flex items-center gap-2 flex-1 min-w-0 max-w-[360px]">
         <VoiceWave visible={isPlaying && !isPaused} />
         <span className="font-mono text-[9px] text-tnc-muted tracking-[1.5px] whitespace-nowrap">
           NOW READING
@@ -98,9 +103,24 @@ export const VoiceControlBar = memo(function VoiceControlBar() {
         </span>
       </div>
 
-      <Sep /> */}
+      <Sep />
 
-      <Btn onClick={openSettings}><span className="text-[18px] leading-none">⚙</span> RULES</Btn>
+      <Btn
+        onClick={() => setMobileSidebarOpen(true)}
+        title="Open queue, history, and watchlist"
+        ariaLabel="Open sidebar panels"
+        className="lg:hidden"
+      >
+        ☰ PANELS
+      </Btn>
+
+      <Btn onClick={openSettings} title="Open rules and settings" ariaLabel="Open rules and settings">
+        <span className="text-[18px] leading-none" aria-hidden>⚙</span> RULES
+      </Btn>
+
+      <span className="hidden xl:inline font-mono text-[8px] text-tnc-text3 tracking-[0.5px] whitespace-nowrap">
+        Space pause · ← replay · → skip · M mute 5m
+      </span>
     </div>
   );
 });

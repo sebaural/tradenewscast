@@ -3,8 +3,7 @@
 import React, { memo } from 'react';
 import type { EnrichedItem, TagType } from '@/types';
 import { useApp } from '@/context/TradeNewsCastContext';
-
-// ── Tag styling ────────────────────────────────────────────────────────────
+import { PriorityBadge } from './PriorityBadge';
 
 const tagStyles: Record<TagType, string> = {
   oil:     'bg-tnc-accent/10 text-tnc-accent     border border-tnc-accent/20',
@@ -17,17 +16,6 @@ const tagStyles: Record<TagType, string> = {
   watch:   'bg-tnc-purple/10  text-tnc-purple     border border-tnc-purple/20',
 };
 
-// ── Priority badge ─────────────────────────────────────────────────────────
-
-const priorityBg: Record<number, string> = {
-  1: 'bg-tnc-red    text-white',
-  2: 'bg-tnc-orange text-black',
-  3: 'bg-tnc-accent text-black',
-  4: 'bg-tnc-bg4    text-tnc-text2 border border-tnc-border2',
-};
-
-// ── NewsItem ───────────────────────────────────────────────────────────────
-
 interface NewsItemProps {
   item: EnrichedItem;
   isFresh: boolean;
@@ -36,7 +24,7 @@ interface NewsItemProps {
 export const NewsItem = memo(function NewsItem({ item, isFresh }: NewsItemProps) {
   const { activeFeedItem, setActiveItem, readSingle } = useApp();
 
-  const isActive   = activeFeedItem === item._id;
+  const isActive = activeFeedItem === item._id;
   const isSpeaking = isActive;
 
   const borderAccent =
@@ -50,9 +38,6 @@ export const NewsItem = memo(function NewsItem({ item, isFresh }: NewsItemProps)
       : isActive
       ? 'bg-tnc-accent/[.07]'
       : 'hover:bg-tnc-bg3';
-
-  const pBadge  = priorityBg[item.priority] ?? priorityBg[4];
-  const pLabel  = `P${item.priority}`;
 
   const headlineColor =
     item.priority === 1 ? 'text-white font-medium' :
@@ -70,22 +55,13 @@ export const NewsItem = memo(function NewsItem({ item, isFresh }: NewsItemProps)
       `}
       style={{ gridTemplateColumns: '54px 1fr auto' }}
     >
-      {/* Time + priority */}
       <div className="pt-[2px]">
         <div className="font-mono text-[10px] text-tnc-muted tracking-[0.2px] whitespace-nowrap">
           {item.time}
         </div>
-        <span
-          className={`
-            font-mono text-[9px] font-semibold tracking-[0.8px] px-[6px] py-[1px]
-            rounded-[2px] uppercase mt-1 inline-block ${pBadge}
-          `}
-        >
-          {pLabel}
-        </span>
+        <PriorityBadge priority={item.priority} className="mt-1" />
       </div>
 
-      {/* Headline + meta */}
       <div className="min-w-0">
         <div className={`text-[12.5px] leading-[1.42] mb-1 ${headlineColor}`}>
           {item.headline}
@@ -112,9 +88,10 @@ export const NewsItem = memo(function NewsItem({ item, isFresh }: NewsItemProps)
         </div>
       </div>
 
-      {/* Read button */}
       <button
+        type="button"
         title="Read this item"
+        aria-label={`Read headline: ${item.headline.slice(0, 60)}`}
         onClick={e => { e.stopPropagation(); readSingle(item._id); }}
         className={`
           bg-transparent border rounded-[2px] w-6 h-6

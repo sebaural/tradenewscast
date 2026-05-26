@@ -16,8 +16,9 @@ const dirClass: Record<string, string> = {
 export const TickerBar = memo(function TickerBar() {
   return (
     <div className="flex h-[32px] flex-shrink-0 items-center overflow-hidden border-b border-[#666] bg-[#06090d] shadow-[inset_0_1px_0_rgba(74,158,255,0.08)]">
-      <div className="flex h-full w-[34px] flex-shrink-0 items-center justify-center border-r border-[#1a2331] bg-[#0a0f15]">
-        <img className="h-[32px] w-[34px]" src="/TNC_logo.png" alt="TradeNewsCast" />
+      <div className="flex h-full w-[34px] flex-shrink-0 flex-col items-center justify-center border-r border-[#1a2331] bg-[#0a0f15]">
+        <img className="h-[24px] w-[28px]" src="/TNC_logo.png" alt="TradeNewsCast" />
+        <span className="font-mono text-[6px] text-[#6a7580] tracking-[0.3px] uppercase mt-0.5">demo</span>
       </div>
 
       {/* Scrolling track */}
