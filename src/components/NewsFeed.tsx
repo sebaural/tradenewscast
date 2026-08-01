@@ -106,6 +106,10 @@ export const NewsFeed = memo(function NewsFeed() {
               {parseStatusText}
             </div>
           </div>
+        ) : allItems.length === 0 && parseStatus === 'live' ? (
+          <div className="px-[14px] py-6 font-mono text-[10px] text-tnc-text3 uppercase tracking-[1px]">
+            Connected to LiveSquawk. Waiting for headlines.
+          </div>
         ) : allItems.length === 0 && parseStatus === 'error' ? (
           <div className="px-[14px] py-6 font-mono text-[10px] text-tnc-red uppercase tracking-[1px]">
             Live feed unavailable

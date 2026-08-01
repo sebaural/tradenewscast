@@ -239,9 +239,6 @@ export function TradeNewsCastProvider({ children }: { children: React.ReactNode 
   useEffect(() => {
     seenHashRef.current = new Set();
     parseErrorsRef.current = 0;
-    setAllItems([]);
-    speech.setReadQueue([]);
-    speech.clearHistory();
     return () => {
       if (speech.queueTimerRef.current) clearTimeout(speech.queueTimerRef.current);
       if (notifTimerRef.current) clearTimeout(notifTimerRef.current);
@@ -250,22 +247,6 @@ export function TradeNewsCastProvider({ children }: { children: React.ReactNode 
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    const markActivated = () => {
-      if (userActivatedRef.current) return;
-      userActivatedRef.current = true;
-      activationHintRef.current = false;
-      if (autoOnRef.current) setTimeout(() => speech.triggerQueue(), 0);
-    };
-    const options: AddEventListenerOptions = { passive: true };
-    window.addEventListener('pointerdown', markActivated, options);
-    window.addEventListener('keydown', markActivated, options);
-    return () => {
-      window.removeEventListener('pointerdown', markActivated);
-      window.removeEventListener('keydown', markActivated);
-    };
-  }, [speech.triggerQueue]);
 
   useEffect(() => {
     if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return;
@@ -282,14 +263,9 @@ export function TradeNewsCastProvider({ children }: { children: React.ReactNode 
     const next = !autoOnRef.current;
     setAutoOn(next);
     if (next) {
-      if (!userActivatedRef.current) {
-        if (!activationHintRef.current) {
-          showNotif('AUTO READ ARMED', 'Click anywhere to enable voice playback');
-          activationHintRef.current = true;
-        }
-      } else {
-        showNotif('AUTO READ ON', 'Reading news in real time');
-      }
+      userActivatedRef.current = true;
+      activationHintRef.current = false;
+      showNotif('AUTO READ ON', 'Reading news in real time');
       setTimeout(speech.triggerQueue, 100);
     } else {
       window.speechSynthesis?.cancel();

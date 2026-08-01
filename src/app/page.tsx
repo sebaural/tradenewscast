@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useEffect } from 'react';
+import { useApp } from '@/context/TradeNewsCastContext';
 import { TradeNewsCastProvider } from '@/context/TradeNewsCastContext';
 import { TickerBar }       from '@/components/TickerBar';
 import { AppHeader }       from '@/components/AppHeader';
@@ -14,6 +15,37 @@ const NewsFeed           = dynamic(() => import('@/components/NewsFeed').then(m 
 const Sidebar            = dynamic(() => import('@/components/Sidebar').then(m => ({ default: m.Sidebar })),             { ssr: false });
 const SettingsModal      = dynamic(() => import('@/components/SettingsModal').then(m => ({ default: m.SettingsModal })), { ssr: false });
 const NotificationToast  = dynamic(() => import('@/components/NotificationToast').then(m => ({ default: m.NotificationToast })), { ssr: false });
+
+function HomeShell() {
+  const { setFilter } = useApp();
+
+  useEffect(() => {
+    setFilter('all');
+  }, [setFilter]);
+
+  return (
+    <>
+      {/* Scrolling market ticker */}
+      <TickerBar />
+
+      {/* Logo / status / clock */}
+      <AppHeader />
+
+      {/* Voice controls */}
+      <VoiceControlBar />
+
+      {/* Two-column main area */}
+      <main className="grid lg:grid-cols-[1fr_300px] flex-1 overflow-hidden">
+        <NewsFeed />
+        <Sidebar />
+      </main>
+
+      {/* Overlays */}
+      <SettingsModal />
+      <NotificationToast />
+    </>
+  );
+}
 
 export default function Page() {
   // Unlock AudioContext on first user gesture so playBeep() works in all browsers.
@@ -37,24 +69,7 @@ export default function Page() {
   return (
     <ErrorBoundary>
       <TradeNewsCastProvider>
-      {/* Scrolling market ticker */}
-      <TickerBar />
-
-      {/* Logo / status / clock */}
-      <AppHeader />
-
-      {/* Voice controls */}
-      <VoiceControlBar />
-
-      {/* Two-column main area */}
-      <main className="grid lg:grid-cols-[1fr_300px] flex-1 overflow-hidden">
-        <NewsFeed />
-        <Sidebar />
-      </main>
-
-      {/* Overlays */}
-      <SettingsModal />
-      <NotificationToast />
+        <HomeShell />
       </TradeNewsCastProvider>
     </ErrorBoundary>
   );

@@ -49,6 +49,12 @@ export function useFeedPolling({
     const now = Date.now();
 
     setAllItems(prev => {
+      // If feed items are empty but seen hashes are populated, recover by resetting
+      // the hash cache so the current batch can repopulate the feed.
+      if (prev.length === 0 && seenHashRef.current.size > 0) {
+        seenHashRef.current = new Set();
+      }
+
       const updated = [...prev];
       for (const raw of rawItems) {
         const hash = `${raw.time}|${raw.headline.slice(0, 50)}`;

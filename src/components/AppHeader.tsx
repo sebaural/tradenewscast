@@ -1,6 +1,7 @@
 'use client';
 
 import React, { memo } from 'react';
+import Link from 'next/link';
 import { useClock } from '@/hooks/useClock';
 import { useApp } from '@/context/TradeNewsCastContext';
 import type { AppState } from '@/types';
@@ -30,12 +31,21 @@ export const AppHeader = memo(function AppHeader() {
   const clock = useClock();
 
   return (
-    <header className="bg-tnc-bg2 border-b border-tnc-border h-12 pl-4 pr-0 sm:px-4 flex items-center justify-between flex-shrink-0">
-      <div className="font-mono text-[1.5rem] font-semibold text-white tracking-[-0.5px]">
+    <header className="main-header bg-tnc-bg2 border-b border-tnc-border h-12 pl-4 pr-0 sm:px-4 flex items-center justify-between flex-shrink-0">
+      <Link href="/" className="site-logo font-mono text-[1.5rem] font-semibold text-white tracking-[-0.5px]">
         Trade<span className="text-tnc-accent">News</span>Cast
-      </div>
+      </Link>
 
-      <div className="flex items-center gap-2 max-[375px]:gap-1 sm:gap-4 mr-[10px] sm:mr-0">
+      <nav aria-label="Primary" className="flex items-center flex-1 justify-end ml-4">
+        <Link
+          href="/podcasts"
+          className="podcasts font-mono text-[14px] uppercase tracking-[1.6px] text-tnc-text hover:text-tnc-accent transition-colors px-2 py-1 mr-2 border border-tnc-text hover:border-tnc-accent rounded-[3px]"
+        >
+          Podcasts
+        </Link>
+      </nav>
+
+      <div className="status-block flex items-center gap-2 max-[375px]:gap-1 sm:gap-4 mr-[10px] sm:mr-0">
         <StatusPill />
 
         <span className="font-mono text-[11px] max-[375px]:text-[10px] text-tnc-text2 tracking-[0.5px] whitespace-nowrap flex-shrink-0">
